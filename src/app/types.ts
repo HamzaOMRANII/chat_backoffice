@@ -78,3 +78,33 @@ export type FriendshipRow = {
 };
 
 export type UserContacts = { personalId: string | null; contacts: FriendshipRow[]; requests: FriendshipRow[] };
+
+export type ChatRow = {
+  id: string;
+  people: { id: string; username: string }[];
+  label: string;
+  mode: "keep" | "auto";
+  retentionDays: number;
+  status: "invited" | "active" | "ended";
+  category: string | null;
+  startedBy: string | null;
+  invitedAt: string;
+  acceptedAt: string | null;
+  endedAt: string | null;
+  endReason: string | null;
+  endedBy: string | null;
+  lastMessageAt: string | null;
+  messagesSent: number;
+  stored: { count: number; bytes: number; nextExpiry: string | null };
+};
+
+export type MessageMeta = { id: string; from: string; to: string; size: number; sentAt: string; deliveredAt: string | null; readAt: string | null; expiresAt: string };
+
+export type Dashboard = {
+  users: Record<Status, number>;
+  online: { total: number; android: number };
+  chats: { active: number; keep: number; auto: number; invited: number };
+  messages: { last24h: number; stored: number; storedBytes: number };
+  attention: { pending: { id: string; username: string; at: string }[]; locked: { id: string; username: string; until: string }[]; pausedContacts: number };
+  logins: { username: string; userId: string; at: string; deviceName: string | null; platform: string | null }[];
+};

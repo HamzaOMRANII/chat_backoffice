@@ -30,3 +30,23 @@ export const EVENT_LABELS: Record<string, string> = {
   email_changed: "email changed",
   locked: "locked",
 };
+
+export function bytes(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10 * 1024 ? 1 : 0)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+export const modeLabel = (c: { mode: string; retentionDays: number }) => `${c.mode === "auto" ? "AUTO" : "KEEP"} · ${c.retentionDays}D`;
+export const modeTone = (mode: string) => (mode === "auto" ? "border-auto-line text-auto" : "border-keep-line text-keep");
+
+export const END_REASONS: Record<string, string> = {
+  ended_by_user: "ended by a participant",
+  declined: "invitation declined",
+  cancelled: "invitation cancelled",
+  invite_expired: "invitation expired",
+  expired: "all messages expired",
+  rules_changed: "category rules changed",
+  contact_unavailable: "contact removed, paused or blocked",
+  deleted_by_admin: "deleted by admin",
+};
