@@ -62,3 +62,19 @@ export type UserDetails = {
   devices: DeviceRow[];
   events: EventRow[];
 };
+
+export type FriendshipRow = {
+  id: string;
+  status: "pending" | "accepted";
+  direction: "sent" | "received";
+  via: "id" | "invite";
+  createdAt: string;
+  acceptedAt: string | null;
+  user: { id: string; username: string; status: Status; online: boolean; lastSeenAt: string | null };
+  sharedCategoryIds: string[];
+  categoryId: string | null;
+  categoryChosen: boolean;
+  paused: boolean;
+};
+
+export type UserContacts = { personalId: string | null; contacts: FriendshipRow[]; requests: FriendshipRow[] };

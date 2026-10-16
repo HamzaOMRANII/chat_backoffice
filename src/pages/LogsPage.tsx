@@ -19,6 +19,8 @@ const ACTIONS: Record<string, string> = {
   "category.updated": "updated category",
   "category.reordered": "reordered categories",
   "category.deleted": "deleted category",
+  "friendship.category_changed": "changed the category of contacts",
+  "friendship.ended": "ended the contact",
 };
 
 export function LogsPage() {
@@ -49,7 +51,7 @@ export function LogsPage() {
             <td className="font-bold">{l.admin ?? "—"}</td>
             <td className="text-ink-soft">
               {ACTIONS[l.action] ?? l.action}{" "}
-              <strong className="text-ink">{l.target ?? (l.details?.username as string | undefined) ?? (l.details?.name as string | undefined) ?? ""}</strong>
+              <strong className="text-ink">{l.target ?? (l.details?.username as string | undefined) ?? (l.details?.name as string | undefined) ?? (l.details?.pair as string | undefined) ?? ""}</strong>
             </td>
           </tr>
         ))}
