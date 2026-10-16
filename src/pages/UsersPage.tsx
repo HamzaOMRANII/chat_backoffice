@@ -4,7 +4,9 @@ import { api } from "../lib/api";
 import { ago, dateTime, place } from "../lib/format";
 import type { Category, Status, UserRow } from "../app/types";
 
-const TABS: [Status, string][] = [
+type Filter = Status | "all";
+const TABS: [Filter, string][] = [
+  ["all", "All"],
   ["pending", "Pending"],
   ["approved", "Approved"],
   ["suspended", "Suspended"],
@@ -14,7 +16,7 @@ const TABS: [Status, string][] = [
 type Props = { categories: Category[]; onCounts: (counts: Record<Status, number>) => void; onOpen: (id: string) => void };
 
 export function UsersPage({ categories, onCounts, onOpen }: Props) {
-  const [status, setStatus] = useState<Status>("pending");
+  const [status, setStatus] = useState<Filter>("pending");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<UserRow[] | null>(null);
   const [counts, setCounts] = useState<Record<Status, number> | null>(null);
@@ -23,8 +25,8 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const params = new URLSearchParams({ status, ...(search.trim() ? { search: search.trim() } : {}) });
-      const res = await api<{ users: UserRow[]; counts: Record<Status, number> }>(`/users?${params}`);
+      const params = new URLSearchParams({ ...(status !== "all" ? { status } : {}), ...(search.trim() ? { search: search.trim() } : {}) });
+      const res = await api<{ users: UserRow[]; counts: Record<Status, number> }>(`/users${params.size ? `?${params}` : ""}`);
       setRows(res.users);
       setCounts(res.counts);
       onCounts(res.counts);
@@ -72,7 +74,7 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
             className={`min-h-[38px] rounded-full border px-3.5 text-[13.5px] ${status === id ? "border-accent bg-accent/15 font-bold text-ink" : "border-line-strong bg-transparent font-semibold text-dim"}`}
           >
             {label}
-            {counts ? ` · ${counts[id]}` : ""}
+            {counts ? ` · ${id === "all" ? Object.values(counts).reduce((a, b) => a + b, 0) : counts[id]}` : ""}
           </button>
         ))}
       </div>
@@ -85,14 +87,14 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
             {rows?.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-dim">
-                  No {status} users{search ? " match this search" : ""}.
+                  No {status === "all" ? "" : `${status} `}users{search ? " match this search" : ""}.
                 </td>
               </tr>
             ) : null}
             {rows?.map((u) => (
               <tr
                 key={u.id}
-                onClick={() => (status === "pending" ? setSelected(u) : onOpen(u.id))}
+                onClick={() => (u.status === "pending" ? setSelected(u) : onOpen(u.id))}
                 className={`cursor-pointer hover:bg-raised ${selected?.id === u.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}
               >
                 <td>
@@ -122,7 +124,7 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
             ))}
           </Table>
         </div>
-        {status === "pending" && selected ? <Review key={selected.id} user={selected} categories={categories} onDone={load} /> : null}
+        {selected?.status === "pending" ? <Review key={selected.id} user={selected} categories={categories} onDone={load} /> : null}
       </div>
     </>
   );
