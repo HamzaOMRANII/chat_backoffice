@@ -123,3 +123,19 @@ describe("user contacts", () => {
     expect(screen.getByText("sara.m")).toBeInTheDocument();
   });
 });
+
+describe("users list", () => {
+  it("shows every status in one list under All", async () => {
+    const approved = { ...PENDING, id: "f".repeat(24), username: "hamza", email: "hamza@example.com", status: "approved", categoryIds: [CATEGORIES[0]!.id] };
+    routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
+    routes["GET /api/admin/users"] = () => [200, { users: [PENDING, approved], counts: { pending: 1, approved: 1, suspended: 0, rejected: 0 } }];
+    render(<App />);
+    fireEvent.click(await screen.findByRole("tab", { name: /^All/ }));
+    expect(await screen.findByText("hamza")).toBeInTheDocument();
+    expect(screen.getByText("pending")).toBeInTheDocument();
+    expect(screen.getByText("approved")).toBeInTheDocument();
+    // A pending row still opens the approval panel
+    fireEvent.click(screen.getByText("leila@example.com"));
+    expect(await screen.findByRole("button", { name: "Approve" })).toBeInTheDocument();
+  });
+});
