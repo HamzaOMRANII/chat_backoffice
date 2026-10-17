@@ -10,6 +10,8 @@ import { api } from "../lib/api";
 import { ago, dateTime, EVENT_LABELS, place } from "../lib/format";
 import type { Category, UserContacts, UserDetails } from "../app/types";
 import { ContactsTable, RequestsTable } from "./UserContacts";
+import { ChatDetails, ChatTable } from "./ChatsPage";
+import type { ChatRow } from "../app/types";
 
 const BAD_EVENTS = new Set([
   "failed_password",
@@ -23,7 +25,7 @@ const WARN_EVENTS = new Set([
   "admin_reset_used",
   "email_changed",
 ]);
-type Tab = "account" | "contacts" | "requests" | "history";
+type Tab = "account" | "contacts" | "requests" | "chats" | "history";
 
 export function UserDetailsPage({
   id,
@@ -46,6 +48,10 @@ export function UserDetailsPage({
   const [confirmText, setConfirmText] = useState("");
   const [contacts, setContacts] = useState<UserContacts | null>(null);
   const [tab, setTab] = useState<Tab>("account");
+  const [chats, setChats] = useState<ChatRow[] | null>(null);
+  const [openChat, setOpenChat] = useState<string | null>(null);
+  const [confirmingHistory, setConfirmingHistory] = useState(false);
+  const [historyText, setHistoryText] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -79,7 +85,7 @@ export function UserDetailsPage({
       if (path === "/reset-access")
         setResetCode(res as { code: string; expiresAt: string });
       setMessage(label);
-      if (method === "DELETE") onBack();
+      if (method === "DELETE" && path === "") onBack();
       else await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -213,6 +219,7 @@ export function UserDetailsPage({
             ["account", "Account & devices"],
             ["contacts", `Contacts · ${contacts?.contacts.length ?? 0}`],
             ["requests", `Requests · ${contacts?.requests.length ?? 0}`],
+            ["chats", `Chats · ${chats?.length ?? 0}`],
             ["history", "Login history"],
           ] as [Tab, string][]
         ).map(([key, label]) => (

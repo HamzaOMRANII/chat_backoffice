@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Layout, type Section } from "../components/Layout";
 import { api, ApiError } from "../lib/api";
 import { CategoriesPage } from "../pages/CategoriesPage";
+import { ChatsPage } from "../pages/ChatsPage";
+import { DashboardPage } from "../pages/DashboardPage";
 import { LoginPage } from "../pages/LoginPage";
 import { LogsPage } from "../pages/LogsPage";
 import { UserDetailsPage } from "../pages/UserDetailsPage";
@@ -12,8 +14,9 @@ type Route = { section: Section; userId?: string };
 
 function parseHash(): Route {
   const [, section, id] = location.hash.split("/");
-  if (section === "categories" || section === "logs") return { section };
-  return { section: "users", userId: section === "users" && id ? id : undefined };
+  if (section === "categories" || section === "logs" || section === "chats") return { section };
+  if (section === "users") return { section: "users", userId: id || undefined };
+  return { section: "dashboard" };
 }
 
 export function App() {
@@ -63,6 +66,8 @@ export function App() {
       {route.section === "users" && !route.userId ? <UsersPage categories={categories} onCounts={onCounts} onOpen={(id) => (location.hash = `#/users/${id}`)} /> : null}
       {route.section === "categories" ? <CategoriesPage categories={categories} reload={loadCategories} /> : null}
       {route.section === "logs" ? <LogsPage /> : null}
+      {route.section === "dashboard" ? <DashboardPage /> : null}
+      {route.section === "chats" ? <ChatsPage /> : null}
     </Layout>
   );
 }

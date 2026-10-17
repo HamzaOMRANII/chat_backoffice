@@ -21,6 +21,8 @@ const ACTIONS: Record<string, string> = {
   "category.deleted": "deleted category",
   "friendship.category_changed": "changed the category of contacts",
   "friendship.ended": "ended the contact",
+  "chat.deleted": "deleted the chat history of",
+  "user.chats_deleted": "deleted all chat history of",
 };
 
 export function LogsPage() {
