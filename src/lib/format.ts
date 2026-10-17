@@ -52,7 +52,7 @@ export const END_REASONS: Record<string, string> = {
   contact_unavailable: "contact removed, paused or blocked",
   deleted_by_admin: "deleted by admin",
   left: "a participant left",
-  connection_lost: "connection lost (30 s)",
+  connection_lost: "connection lost (1 min)",
 };
 
 /** "03:12", "1:04:05" */

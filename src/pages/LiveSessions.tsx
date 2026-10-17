@@ -7,22 +7,22 @@ import type { LiveRow } from "../app/types";
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 /** Live chats: who, when and how long. What is typed only passes through the server, encrypted, and is never stored. */
-export function LiveSessions({ search, onCount }: { search: string; onCount: (n: number) => void }) {
+export function LiveSessions({ search, category = "", initialSelected = null, onCount }: { search: string; category?: string; initialSelected?: string | null; onCount: (n: number) => void }) {
   const [rows, setRows] = useState<LiveRow[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialSelected);
   const [error, setError] = useState("");
   const [now, setNow] = useState(Date.now());
 
   const load = useCallback(async () => {
     try {
-      const res = await api<{ live: LiveRow[]; now: number }>("/live");
+      const res = await api<{ live: LiveRow[]; now: number }>(`/live${category ? `?category=${category}` : ""}`);
       setRows(res.live);
       onCount(res.now);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't load live chats");
     }
-  }, [onCount]);
+  }, [onCount, category]);
   useEffect(() => {
     void load();
     // Running durations tick; the list itself refreshes every 10 s

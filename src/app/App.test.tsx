@@ -187,7 +187,8 @@ describe("dashboard and chats", () => {
   it("lists chats with metadata only and deletes one after typing its name", async () => {
     location.hash = "#/chats";
     routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
-    routes["GET /api/admin/chats?status=active"] = () => [200, { chats: [CHAT], counts: { active: 1, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/chats?status=all"] = () => [200, { chats: [CHAT], counts: { active: 1, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/live"] = () => [200, { live: [], now: 0 }];
     routes[`GET /api/admin/chats/${CHAT.id}`] = () => [
       200,
       { chat: CHAT, messages: [{ id: "m1", from: "hamza", to: "leila.b", size: 184, sentAt: new Date().toISOString(), deliveredAt: new Date().toISOString(), readAt: null, expiresAt: new Date().toISOString() }] },
@@ -211,7 +212,10 @@ describe("dashboard and chats", () => {
     location.hash = "#/chats";
     const started = new Date(Date.now() - 192_000).toISOString();
     routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
-    routes["GET /api/admin/chats?status=active"] = () => [200, { chats: [], counts: { active: 0, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/chats?status=all"] = () => [200, { chats: [CHAT], counts: { active: 1, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/chats?status=all&category=c1"] = () => [200, { chats: [], counts: { active: 1, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/live?category=c1"] = () => [200, { live: [], now: 0 }];
+    routes["GET /api/admin/categories"] = () => [200, { categories: [{ id: "c1", name: "Pro", order: 1, rules: {}, members: 2 }] }];
     routes["GET /api/admin/live"] = () => [
       200,
       {
@@ -224,6 +228,15 @@ describe("dashboard and chats", () => {
     ];
     routes["DELETE /api/admin/live/l1"] = () => [200, { ok: true }];
     render(<App />);
+    // All: stored and live chats in one list
+    expect(await screen.findByText("live now")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "hamza + rami.t" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "hamza + leila.b" })).toHaveLength(2); // the stored chat and the live one
+    // Filtered by category
+    fireEvent.change(await screen.findByLabelText("Category"), { target: { value: "c1" } });
+    expect(await screen.findByText("No chats.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Category"), { target: { value: "" } });
+    await screen.findByText("live now");
     fireEvent.click(await screen.findByRole("tab", { name: /Live/ }));
     expect(await screen.findByText(/^03:1\d · live now$/)).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Live · 1 now/ })).toBeInTheDocument();
