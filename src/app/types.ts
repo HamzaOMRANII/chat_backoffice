@@ -84,7 +84,7 @@ export type ChatRow = {
   people: { id: string; username: string }[];
   label: string;
   mode: "keep" | "auto";
-  retentionDays: number;
+  retentionMinutes: number;
   status: "invited" | "active" | "ended";
   category: string | null;
   startedBy: string | null;

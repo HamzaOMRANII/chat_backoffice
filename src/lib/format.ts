@@ -37,7 +37,9 @@ export function bytes(n: number) {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export const modeLabel = (c: { mode: string; retentionDays: number }) => `${c.mode === "auto" ? "AUTO" : "KEEP"} · ${c.retentionDays}D`;
+/** "30M", "6H", "2D" */
+export const shortDuration = (minutes: number) => (minutes < 60 ? `${minutes}M` : minutes < 1440 ? `${minutes / 60}H` : `${minutes / 1440}D`);
+export const modeLabel = (c: { mode: string; retentionMinutes: number }) => `${c.mode === "auto" ? "AUTO" : "KEEP"} · ${shortDuration(c.retentionMinutes)}`;
 export const modeTone = (mode: string) => (mode === "auto" ? "border-auto-line text-auto" : "border-keep-line text-keep");
 
 export const END_REASONS: Record<string, string> = {

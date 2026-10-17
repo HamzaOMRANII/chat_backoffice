@@ -159,7 +159,7 @@ describe("dashboard and chats", () => {
     ],
     label: "hamza + leila.b",
     mode: "keep",
-    retentionDays: 3,
+    retentionMinutes: 4320,
     status: "active",
     category: "Pro",
     startedBy: "hamza",

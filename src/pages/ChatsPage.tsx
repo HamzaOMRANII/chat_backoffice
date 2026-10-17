@@ -11,7 +11,7 @@ const TABS: [Status, string][] = [
   ["ended", "Ended · 30 days"],
 ];
 
-export function ModeBadge({ chat }: { chat: Pick<ChatRow, "mode" | "retentionDays" | "status"> }) {
+export function ModeBadge({ chat }: { chat: Pick<ChatRow, "mode" | "retentionMinutes" | "status"> }) {
   return (
     <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[10.5px] font-bold ${modeTone(chat.mode)} ${chat.status === "invited" ? "border-dashed" : ""}`}>
       {modeLabel(chat)}
