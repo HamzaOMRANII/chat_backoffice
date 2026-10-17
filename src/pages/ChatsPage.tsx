@@ -42,6 +42,30 @@ export function ChatsPage({ categories }: { categories: Category[] }) {
   const [category, setCategory] = useState("");
   const [liveRows, setLiveRows] = useState<LiveRow[] | null>(null);
   const [liveSelected, setLiveSelected] = useState<string | null>(null);
+  // Rows ticked for deletion: "chat:<id>" or "live:<id>"
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [purge, setPurge] = useState<"selected" | "all" | null>(null);
+  const [purgeText, setPurgeText] = useState("");
+  const [purgeNote, setPurgeNote] = useState("");
+  const togglePick = (key: string) => setPicked((p) => (p.has(key) ? new Set([...p].filter((k) => k !== key)) : new Set(p).add(key)));
+  const visibleKeys = () => [...(rows ?? []).map((r) => `chat:${r.id}`), ...(status === "all" ? (liveRows ?? []).map((r) => `live:${r.id}`) : [])];
+  async function runPurge() {
+    try {
+      const ids = [...picked].filter((k) => k.startsWith("chat:")).map((k) => k.slice(5));
+      const liveIds = [...picked].filter((k) => k.startsWith("live:")).map((k) => k.slice(5));
+      const r = await api<{ chats: number; live: number; messages: number; bytes: number }>("/chats/purge", {
+        body: purge === "all" ? { confirm: purgeText, all: category ? { category } : {} } : { confirm: purgeText, ids, liveIds },
+      });
+      setPurgeNote(`Deleted ${r.chats} chat${r.chats === 1 ? "" : "s"} and ${r.live} live chat${r.live === 1 ? "" : "s"} · ${r.messages} messages · ${bytes(r.bytes)} of files freed.`);
+      setPicked(new Set());
+      setPurge(null);
+      setPurgeText("");
+      setSelected(null);
+      void load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete");
+    }
+  }
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ChatRow[] | null>(null);
   const [counts, setCounts] = useState<Record<
@@ -186,6 +210,61 @@ export function ChatsPage({ categories }: { categories: Category[] }) {
       ) : null}
 
       {status !== "live" ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-panel px-4 py-3">
+          <label className="flex items-center gap-2 text-[13px] text-ink-soft">
+            <input
+              type="checkbox"
+              checked={visibleKeys().length > 0 && visibleKeys().every((k) => picked.has(k))}
+              onChange={(e) => setPicked(e.target.checked ? new Set(visibleKeys()) : new Set())}
+              className="size-4 accent-[#C7707E]"
+            />
+            Select all shown
+          </label>
+          <span className="grow font-mono text-[11.5px] text-dim">{picked.size ? `${picked.size} selected` : "tick chats to delete them for good"}</span>
+          <SmallButton tone="danger" disabled={!picked.size} onClick={() => setPurge("selected")}>
+            Delete selected
+          </SmallButton>
+          <SmallButton tone="danger" onClick={() => setPurge("all")}>
+            {category ? "Delete all chats of this category" : "Delete all chats"}
+          </SmallButton>
+        </div>
+      ) : null}
+      {purge ? (
+        <div role="alertdialog" aria-label="Delete chats" className="flex flex-col gap-2.5 rounded-2xl border border-dashed border-danger bg-danger/[0.05] p-4">
+          <p className="m-0 text-sm leading-relaxed text-ink-soft">
+            {purge === "all" ? (
+              <>
+                Delete <strong className="text-ink">every chat{category ? " of this category" : ""}</strong>, stored and live, with all their messages, files and exports?
+              </>
+            ) : (
+              <>
+                Delete the <strong className="text-ink">{picked.size} selected</strong> chat{picked.size === 1 ? "" : "s"}, with all their messages, files and exports?
+              </>
+            )}{" "}
+            Open chats end at once for both people. Nothing can be recovered. Logged in the activity log.
+          </p>
+          <label className="flex flex-col gap-1.5 text-[12.5px] text-dim">
+            Type DELETE to confirm
+            <input value={purgeText} onChange={(e) => setPurgeText(e.target.value)} className="min-h-[42px] max-w-[260px] rounded-field border border-danger bg-bg px-3 font-mono text-ink outline-none" />
+          </label>
+          <div className="flex gap-2">
+            <SmallButton tone="danger" disabled={purgeText !== "DELETE"} onClick={() => void runPurge()}>
+              Delete for good
+            </SmallButton>
+            <SmallButton
+              onClick={() => {
+                setPurge(null);
+                setPurgeText("");
+              }}
+            >
+              Cancel
+            </SmallButton>
+          </div>
+        </div>
+      ) : null}
+      {purgeNote ? <Notice tone="ok">{purgeNote}</Notice> : null}
+
+      {status !== "live" ? (
         <div className="flex flex-wrap items-start gap-[18px]">
           <div className="min-w-0 flex-[999_1_480px]">
             {status === "all" ? (
@@ -206,12 +285,16 @@ export function ChatsPage({ categories }: { categories: Category[] }) {
                   setLiveSelected(id);
                   setStatus("live");
                 }}
+                picked={picked}
+                onPick={togglePick}
               />
             ) : (
               <ChatTable
                 rows={rows}
                 selected={selected}
                 onSelect={setSelected}
+                picked={picked}
+                onPick={togglePick}
                 empty={
                   search
                     ? "No chat matches this search."
@@ -246,12 +329,16 @@ function AllTable({
   selected,
   onSelect,
   onSelectLive,
+  picked,
+  onPick,
 }: {
   rows: ChatRow[] | null;
   live: LiveRow[] | null;
   selected: string | null;
   onSelect: (id: string) => void;
   onSelectLive: (id: string) => void;
+  picked?: Set<string>;
+  onPick?: (key: string) => void;
 }) {
   type Item =
     | { kind: "chat"; at: string; row: ChatRow }
@@ -273,6 +360,7 @@ function AllTable({
       : null;
   const started = (item: Item) => time(item.kind === "chat" ? (item.row.acceptedAt ?? item.row.invitedAt) : (item.row.startedAt ?? item.row.invitedAt));
   const { sorted, sort } = useSort(items, [
+    null,
     (i) => i.row.label,
     (i) => (i.kind === "live" ? "live" : i.row.mode),
     (i) => (i.kind === "live" && i.row.status === "active" ? "live now" : i.row.status),
@@ -282,13 +370,13 @@ function AllTable({
   ]);
   return (
     <Table
-      head={["Between", "Type", "Status", "Category", "Started", "Activity"]}
+      head={["", "Between", "Type", "Status", "Category", "Started", "Activity"]}
       minWidth={760}
       sort={sort}
     >
       {items?.length === 0 ? (
         <tr>
-          <td colSpan={6} className="text-dim">
+          <td colSpan={7} className="text-dim">
             No chats.
           </td>
         </tr>
@@ -307,6 +395,15 @@ function AllTable({
             }
             className={`cursor-pointer hover:bg-raised ${selected === r.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}
           >
+            <td onClick={(e) => e.stopPropagation()} className="w-10">
+              <input
+                type="checkbox"
+                aria-label={`Select ${r.label}`}
+                checked={picked?.has(`${item.kind}:${r.id}`) ?? false}
+                onChange={() => onPick?.(`${item.kind}:${r.id}`)}
+                className="size-4 accent-[#C7707E]"
+              />
+            </td>
             <td>
               <button
                 type="button"
@@ -361,13 +458,18 @@ export function ChatTable({
   selected,
   onSelect,
   empty,
+  picked,
+  onPick,
 }: {
   rows: ChatRow[] | null;
   selected?: string | null;
   onSelect: (id: string) => void;
   empty: string;
+  picked?: Set<string>;
+  onPick?: (key: string) => void;
 }) {
   const { sorted, sort } = useSort(rows, [
+    ...(onPick ? [null] : []),
     (c) => c.label,
     (c) => `${c.mode}-${String(c.retentionMinutes).padStart(6, "0")}`,
     (c) => c.category,
@@ -379,6 +481,7 @@ export function ChatTable({
     <Table
       sort={sort}
       head={[
+        ...(onPick ? [""] : []),
         "Between",
         "Mode",
         "Category",
@@ -390,7 +493,7 @@ export function ChatTable({
     >
       {rows?.length === 0 ? (
         <tr>
-          <td colSpan={6} className="text-dim">
+          <td colSpan={onPick ? 7 : 6} className="text-dim">
             {empty}
           </td>
         </tr>
@@ -401,6 +504,17 @@ export function ChatTable({
           onClick={() => onSelect(c.id)}
           className={`cursor-pointer hover:bg-raised ${selected === c.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}
         >
+          {onPick ? (
+            <td onClick={(e) => e.stopPropagation()} className="w-10">
+              <input
+                type="checkbox"
+                aria-label={`Select ${c.label}`}
+                checked={picked?.has(`chat:${c.id}`) ?? false}
+                onChange={() => onPick?.(`chat:${c.id}`)}
+                className="size-4 accent-[#C7707E]"
+              />
+            </td>
+          ) : null}
           <td>
             <button
               type="button"
