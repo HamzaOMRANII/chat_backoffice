@@ -243,7 +243,7 @@ describe("dashboard and chats", () => {
     expect(screen.getByRole("button", { name: "hamza + rami.t" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "hamza + leila.b" })).toHaveLength(2); // the stored chat and the live one
     // Sorted by type: KEEP before LIVE, then the other way round
-    const kinds = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelectorAll("td")[1]?.textContent);
+    const kinds = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelectorAll("td")[2]?.textContent);
     fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
     expect(kinds()[0]).toMatch(/KEEP/);
     fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
@@ -298,5 +298,23 @@ describe("dashboard and chats", () => {
     fireEvent.click(await within(panel).findByRole("button", { name: /Delete all 1 files now/ }));
     fireEvent.click(within(panel).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(calls.find((c) => c.path.endsWith("/storage/delete"))?.body).toEqual({ userId: uid }));
+  });
+
+  it("deletes selected chats for good after typing DELETE", async () => {
+    location.hash = "#/chats";
+    routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
+    routes["GET /api/admin/chats?status=all"] = () => [200, { chats: [CHAT], counts: { active: 1, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/live"] = () => [200, { live: [], now: 0 }];
+    routes["POST /api/admin/chats/purge"] = () => [200, { chats: 1, live: 0, messages: 23, bytes: 9200 }];
+    render(<App />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Select hamza + leila.b" }));
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Delete selected/ }));
+    const dialog = screen.getByRole("alertdialog", { name: "Delete chats" });
+    expect(within(dialog).getByRole("button", { name: /Delete for good/ })).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText("Type DELETE to confirm"), { target: { value: "DELETE" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: /Delete for good/ }));
+    await waitFor(() => expect(calls.find((c) => c.path.endsWith("/chats/purge"))?.body).toEqual({ confirm: "DELETE", ids: [CHAT.id], liveIds: [] }));
+    expect(await screen.findByText(/Deleted 1 chat and 0 live chats · 23 messages/)).toBeInTheDocument();
   });
 });
