@@ -435,6 +435,9 @@ export function ChatTable({
   );
 }
 
+type ExportMeta = { id: string; by: string; approver: string; status: string; requestedAt: string; answeredAt: string | null; downloadedAt: string | null };
+const EXPORT_STATUS: Record<string, string> = { pending: "waiting for an answer", approved: "approved", refused: "refused", expired: "expired without answer", cancelled: "cancelled" };
+
 const receipt = (m: MessageMeta) =>
   m.readAt ? "✓✓" : m.deliveredAt ? "✓" : "·";
 
@@ -448,13 +451,14 @@ export function ChatDetails({
   const [data, setData] = useState<{
     chat: ChatRow;
     messages: MessageMeta[];
+    exports?: ExportMeta[];
   } | null>(null);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
   const [confirmText, setConfirmText] = useState("");
 
   useEffect(() => {
-    api<{ chat: ChatRow; messages: MessageMeta[] }>(`/chats/${id}`)
+    api<{ chat: ChatRow; messages: MessageMeta[]; exports?: ExportMeta[] }>(`/chats/${id}`)
       .then(setData)
       .catch((err) =>
         setError(
@@ -476,7 +480,7 @@ export function ChatDetails({
   }
 
   if (!data) return error ? <Notice tone="error">{error}</Notice> : null;
-  const { chat, messages } = data;
+  const { chat, messages, exports = [] } = data;
   return (
     <aside
       aria-label={`Chat ${chat.label}`}
@@ -529,6 +533,23 @@ export function ChatDetails({
               ? ` · next deleted ${dateTime(chat.stored.nextExpiry)}`
               : ""}
           </p>
+          <p className="eyebrow m-0">exports</p>
+          <div className="flex flex-col rounded-xl border border-line font-mono text-[11.5px]">
+            {exports.length === 0 ? <p className="m-0 px-3 py-2.5 text-dim">No export asked.</p> : null}
+            {exports.map((e, i) => (
+              <div key={e.id} className={`grid grid-cols-[1fr_1.2fr_auto] gap-2.5 px-3 py-2 text-ink-soft ${i ? "border-t border-line" : ""}`}>
+                <span className="truncate">
+                  {e.by} → {e.approver}
+                </span>
+                <span className={e.status === "approved" ? "text-online" : e.status === "refused" ? "text-danger-ink" : "text-dim"}>
+                  {EXPORT_STATUS[e.status] ?? e.status}
+                  {e.downloadedAt ? ` · saved ${dateTime(e.downloadedAt)}` : ""}
+                </span>
+                <span className="text-dim">{dateTime(e.requestedAt)}</span>
+              </div>
+            ))}
+          </div>
+          <p className="m-0 text-xs leading-normal text-faint">The zip is built on the phone: its content never reaches the server.</p>
           {error ? <Notice tone="error">{error}</Notice> : null}
           {confirming ? (
             <div className="flex flex-col gap-2">
