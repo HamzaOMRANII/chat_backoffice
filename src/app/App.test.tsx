@@ -206,4 +206,33 @@ describe("dashboard and chats", () => {
     fireEvent.click(confirm);
     await waitFor(() => expect(calls.find((c) => c.method === "DELETE")?.body).toEqual({ confirm: "hamza + leila.b" }));
   });
+
+  it("shows live chats (who, when, how long) and ends a running one", async () => {
+    location.hash = "#/chats";
+    const started = new Date(Date.now() - 192_000).toISOString();
+    routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
+    routes["GET /api/admin/chats?status=active"] = () => [200, { chats: [], counts: { active: 0, invited: 0, ended: 0 } }];
+    routes["GET /api/admin/live"] = () => [
+      200,
+      {
+        now: 1,
+        live: [
+          { id: "l1", label: "hamza + leila.b", status: "active", category: "Pro", startedBy: "hamza", invitedAt: started, startedAt: started, endedAt: null, endReason: null, endedBy: null },
+          { id: "l2", label: "hamza + rami.t", status: "ended", category: "Friends", startedBy: "hamza", invitedAt: started, startedAt: started, endedAt: new Date(Date.parse(started) + 520_000).toISOString(), endReason: "left", endedBy: "rami.t" },
+        ],
+      },
+    ];
+    routes["DELETE /api/admin/live/l1"] = () => [200, { ok: true }];
+    render(<App />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Live/ }));
+    expect(await screen.findByText(/^03:1\d · live now$/)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Live · 1 now/ })).toBeInTheDocument();
+    expect(screen.getByText("rami.t left")).toBeInTheDocument();
+    expect(screen.getByText("08:40")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "hamza + leila.b" }));
+    const panel = await screen.findByRole("complementary", { name: "Live chat hamza + leila.b" });
+    expect(within(panel).getByText("accepted by leila.b")).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole("button", { name: "End this live chat" }));
+    await waitFor(() => expect(calls.some((c) => c.method === "DELETE")).toBe(true));
+  });
 });

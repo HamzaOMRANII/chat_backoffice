@@ -51,4 +51,14 @@ export const END_REASONS: Record<string, string> = {
   rules_changed: "category rules changed",
   contact_unavailable: "contact removed, paused or blocked",
   deleted_by_admin: "deleted by admin",
+  left: "a participant left",
+  connection_lost: "connection lost (30 s)",
 };
+
+/** "03:12", "1:04:05" */
+export function duration(ms: number) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, "0");
+  const ss = String(s % 60).padStart(2, "0");
+  return s >= 3600 ? `${Math.floor(s / 3600)}:${mm}:${ss}` : `${mm}:${ss}`;
+}

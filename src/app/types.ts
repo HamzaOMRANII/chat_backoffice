@@ -108,3 +108,17 @@ export type Dashboard = {
   attention: { pending: { id: string; username: string; at: string }[]; locked: { id: string; username: string; until: string }[]; pausedContacts: number };
   logins: { username: string; userId: string; at: string; deviceName: string | null; platform: string | null }[];
 };
+
+/** A live chat: who, when, how long. Nothing typed is ever stored. */
+export type LiveRow = {
+  id: string;
+  label: string;
+  status: "invited" | "active" | "ended";
+  category: string | null;
+  startedBy: string | null;
+  invitedAt: string;
+  startedAt: string | null;
+  endedAt: string | null;
+  endReason: string | null;
+  endedBy: string | null;
+};

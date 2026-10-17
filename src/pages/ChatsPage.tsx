@@ -3,12 +3,14 @@ import { Notice, SmallButton, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { ago, bytes, dateTime, END_REASONS, modeLabel, modeTone } from "../lib/format";
 import type { ChatRow, MessageMeta } from "../app/types";
+import { LiveSessions } from "./LiveSessions";
 
-type Status = ChatRow["status"];
+type Status = ChatRow["status"] | "live";
 const TABS: [Status, string][] = [
   ["active", "Active"],
   ["invited", "Invited"],
   ["ended", "Ended · 30 days"],
+  ["live", "Live"],
 ];
 
 export function ModeBadge({ chat }: { chat: Pick<ChatRow, "mode" | "retentionMinutes" | "status"> }) {
@@ -24,14 +26,16 @@ export function ChatsPage() {
   const [status, setStatus] = useState<Status>("active");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ChatRow[] | null>(null);
-  const [counts, setCounts] = useState<Record<Status, number> | null>(null);
+  const [counts, setCounts] = useState<Record<ChatRow["status"], number> | null>(null);
+  const [liveNow, setLiveNow] = useState<number | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
+    if (status === "live") return;
     try {
       const params = new URLSearchParams({ status, ...(search.trim() ? { search: search.trim() } : {}) });
-      const res = await api<{ chats: ChatRow[]; counts: Record<Status, number> }>(`/chats?${params}`);
+      const res = await api<{ chats: ChatRow[]; counts: Record<ChatRow["status"], number> }>(`/chats?${params}`);
       setRows(res.chats);
       setCounts(res.counts);
       setError("");
@@ -49,7 +53,9 @@ export function ChatsPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex grow flex-col gap-1">
           <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">Chats</h1>
-          <p className="m-0 font-mono text-[11.5px] text-faint">metadata only · message content is end-to-end encrypted and never visible here</p>
+          <p className="m-0 font-mono text-[11.5px] text-faint">
+            {status === "live" ? "live chats are never stored: only who, when and how long is shown" : "metadata only · message content is end-to-end encrypted and never visible here"}
+          </p>
         </div>
         <label className="flex flex-[0_1_280px]">
           <span className="sr-only">Search chats</span>
@@ -74,17 +80,21 @@ export function ChatsPage() {
               setStatus(id);
               setSelected(null);
             }}
-            className={`min-h-[38px] rounded-full border px-3.5 text-[13.5px] ${status === id ? "border-accent bg-accent/15 font-bold text-ink" : "border-line-strong bg-transparent font-semibold text-dim"}`}
+            className={`inline-flex min-h-[38px] items-center gap-2 rounded-full border px-3.5 text-[13.5px] ${
+              status === id ? (id === "live" ? "border-live-line bg-live/10 font-bold text-ink" : "border-accent bg-accent/15 font-bold text-ink") : "border-line-strong bg-transparent font-semibold text-dim"
+            }`}
           >
+            {id === "live" ? <span className="size-[7px] rounded-full bg-live" aria-hidden="true" /> : null}
             {label}
-            {counts && id !== "ended" ? ` · ${counts[id]}` : ""}
+            {id === "live" ? (liveNow !== null ? ` · ${liveNow} now` : "") : counts && id !== "ended" ? ` · ${counts[id]}` : ""}
           </button>
         ))}
       </div>
 
-      {error ? <Notice tone="error">{error}</Notice> : null}
+      {status === "live" ? <LiveSessions search={search} onCount={setLiveNow} /> : null}
+      {error && status !== "live" ? <Notice tone="error">{error}</Notice> : null}
 
-      <div className="flex flex-wrap items-start gap-[18px]">
+      <div className={`flex flex-wrap items-start gap-[18px] ${status === "live" ? "hidden" : ""}`}>
         <div className="min-w-0 flex-[999_1_480px]">
           <ChatTable rows={rows} selected={selected} onSelect={setSelected} empty={search ? "No chat matches this search." : `No ${status} chats.`} />
         </div>
