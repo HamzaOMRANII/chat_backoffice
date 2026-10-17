@@ -264,4 +264,39 @@ describe("dashboard and chats", () => {
     fireEvent.click(within(panel).getByRole("button", { name: "End this live chat" }));
     await waitFor(() => expect(calls.some((c) => c.method === "DELETE")).toBe(true));
   });
+
+  it("shows storage (sizes only), asks a user to download before a deadline, and deletes their files", async () => {
+    location.hash = "#/storage";
+    const uid = "e".repeat(24);
+    routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
+    routes["GET /api/admin/storage"] = () => [
+      200,
+      {
+        files: 9,
+        bytes: 1.62e9,
+        chats: 2,
+        quota: 2 * 1024 ** 3,
+        disk: { used: 24.4e9, total: 40e9, ratio: 0.61, limit: 0.8 },
+        lastCleanup: null,
+        users: [{ id: uid, username: "youssef.k", files: 9, bytes: 1.62e9, nextExpiry: new Date(Date.now() + 2 * 864e5).toISOString(), request: null }],
+      },
+    ];
+    routes[`GET /api/admin/storage/users/${uid}`] = () => [
+      200,
+      { user: { username: "youssef.k", request: null }, quota: 2 * 1024 ** 3, files: [{ id: "f1", kind: "video", size: 640e6, to: "sara.m", createdAt: null, expiresAt: new Date(Date.now() + 2 * 864e5).toISOString() }] },
+    ];
+    routes[`POST /api/admin/storage/users/${uid}/request`] = () => [200, { deadline: new Date().toISOString() }];
+    routes["POST /api/admin/storage/delete"] = () => [200, { deleted: 9, bytes: 1.62e9 }];
+    render(<App />);
+    expect(await screen.findByText("61%")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "youssef.k" }));
+    const panel = await screen.findByRole("complementary", { name: "Media of youssef.k" });
+    expect(within(panel).getByText("video · to sara.m")).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole("radio", { name: "7 days" }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Send the request" }));
+    await waitFor(() => expect(calls.find((c) => c.path.endsWith("/request"))?.body).toEqual({ hours: 168 }));
+    fireEvent.click(await within(panel).findByRole("button", { name: /Delete all 1 files now/ }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(calls.find((c) => c.path.endsWith("/storage/delete"))?.body).toEqual({ userId: uid }));
+  });
 });

@@ -23,6 +23,11 @@ const ACTIONS: Record<string, string> = {
   "friendship.ended": "ended the contact",
   "chat.deleted": "deleted the chat history of",
   "user.chats_deleted": "deleted all chat history of",
+  "live.ended": "ended a live chat",
+  "storage.request": "asked to download their media:",
+  "storage.request_cancelled": "cancelled the media request of",
+  "storage.deleted": "deleted media",
+  "storage.cleanup": "ran the storage cleanup",
 };
 
 export function LogsPage() {
