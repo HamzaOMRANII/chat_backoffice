@@ -144,6 +144,16 @@ describe("users list", () => {
     expect(await screen.findByText("hamza")).toBeInTheDocument();
     expect(screen.getByText("pending")).toBeInTheDocument();
     expect(screen.getByText("approved")).toBeInTheDocument();
+    // Sorting by a column: ascending, descending, then back to the server's order
+    const names = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelector("td button")?.textContent);
+    expect(names()).toEqual(["leila.b", "hamza"]);
+    fireEvent.click(screen.getByRole("button", { name: /^User/ }));
+    expect(names()).toEqual(["hamza", "leila.b"]);
+    expect(screen.getByRole("columnheader", { name: /User/ })).toHaveAttribute("aria-sort", "ascending");
+    fireEvent.click(screen.getByRole("button", { name: /^User/ }));
+    expect(names()).toEqual(["leila.b", "hamza"]);
+    fireEvent.click(screen.getByRole("button", { name: /^Status/ }));
+    expect(names()).toEqual(["hamza", "leila.b"]); // approved before pending
     // A pending row still opens the approval panel
     fireEvent.click(screen.getByText("leila@example.com"));
     expect(await screen.findByRole("button", { name: "Approve" })).toBeInTheDocument();
@@ -232,6 +242,12 @@ describe("dashboard and chats", () => {
     expect(await screen.findByText("live now")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "hamza + rami.t" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "hamza + leila.b" })).toHaveLength(2); // the stored chat and the live one
+    // Sorted by type: KEEP before LIVE, then the other way round
+    const kinds = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelectorAll("td")[1]?.textContent);
+    fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
+    expect(kinds()[0]).toMatch(/KEEP/);
+    fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
+    expect(kinds()[0]).toBe("LIVE");
     // Filtered by category
     fireEvent.change(await screen.findByLabelText("Category"), { target: { value: "c1" } });
     expect(await screen.findByText("No chats.")).toBeInTheDocument();

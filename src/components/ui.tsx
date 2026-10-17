@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 type Tone = "error" | "warning" | "info" | "ok";
@@ -38,18 +39,74 @@ export function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase ${STATUS_STYLES[status] ?? ""}`}>{status}</span>;
 }
 
-/** Wide tables scroll inside their box on small screens. */
-export function Table({ head, children, minWidth = 640 }: { head: string[]; children: ReactNode; minWidth?: number }) {
+type SortValue = string | number | null | undefined;
+export type Sort = { col: number; dir: 1 | -1 } | null;
+
+/**
+ * Click a column to sort by it: ascending, then descending, then back to the server's order.
+ * `keys[i]` gives the value column i sorts by (null = that column doesn't sort).
+ */
+export function useSort<T>(rows: T[] | null, keys: (((row: T) => SortValue) | null)[]) {
+  const [sort, setSort] = useState<Sort>(null);
+  const toggle = (col: number) => setSort((s) => (s?.col !== col ? { col, dir: 1 } : s.dir === 1 ? { col, dir: -1 } : null));
+  const key = sort ? keys[sort.col] : null;
+  const sorted =
+    rows && sort && key
+      ? [...rows].sort((a, b) => {
+          const x = key(a);
+          const y = key(b);
+          // Empty values always last
+          if (x === y) return 0;
+          if (x === null || x === undefined || x === "") return 1;
+          if (y === null || y === undefined || y === "") return -1;
+          const order = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), undefined, { sensitivity: "base", numeric: true });
+          return order * sort.dir;
+        })
+      : rows;
+  return { sorted, sort: { state: sort, onSort: toggle, sortable: keys.map(Boolean) } };
+}
+
+/** ISO dates as numbers, for sorting. */
+export const time = (iso?: string | null) => (iso ? Date.parse(iso) : null);
+
+/** Wide tables scroll inside their box on small screens. Headers sort when `sort` is given. */
+export function Table({
+  head,
+  children,
+  minWidth = 640,
+  sort,
+}: {
+  head: string[];
+  children: ReactNode;
+  minWidth?: number;
+  sort?: { state: Sort; onSort: (col: number) => void; sortable: boolean[] };
+}) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-line bg-panel">
       <table className="w-full border-collapse text-[13.5px]" style={{ minWidth }}>
         <thead>
           <tr className="text-left font-mono text-[10.5px] uppercase tracking-[0.12em] text-dim">
-            {head.map((h) => (
-              <th key={h} className="px-4 py-3 font-medium">
-                {h}
-              </th>
-            ))}
+            {head.map((h, i) => {
+              const active = sort?.state?.col === i ? sort.state.dir : 0;
+              return (
+                <th key={`${h}-${i}`} className="px-4 py-3 font-medium" aria-sort={active === 1 ? "ascending" : active === -1 ? "descending" : undefined}>
+                  {sort?.sortable[i] && h ? (
+                    <button
+                      type="button"
+                      onClick={() => sort.onSort(i)}
+                      className={`inline-flex items-center gap-1 bg-transparent p-0 font-mono text-[10.5px] uppercase tracking-[0.12em] hover:text-ink ${active ? "text-ink" : "text-dim"}`}
+                    >
+                      {h}
+                      <span aria-hidden="true" className={active ? "" : "opacity-30"}>
+                        {active === -1 ? "▼" : "▲"}
+                      </span>
+                    </button>
+                  ) : (
+                    h
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody className="[&>tr]:border-t [&>tr]:border-line [&_td]:px-4 [&_td]:py-3">{children}</tbody>

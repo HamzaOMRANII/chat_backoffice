@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Notice, SmallButton, Table } from "../components/ui";
+import { Notice, SmallButton, Table, time as toMs, useSort } from "../components/ui";
 import { api } from "../lib/api";
 import { dateTime, duration, END_REASONS } from "../lib/format";
 import type { LiveRow } from "../app/types";
@@ -43,6 +43,13 @@ export function LiveSessions({ search, category = "", initialSelected = null, on
   const q = search.trim().toLowerCase();
   const shown = rows?.filter((r) => !q || r.label.toLowerCase().includes(q)) ?? null;
   const current = rows?.find((r) => r.id === selected) ?? null;
+  const { sorted, sort } = useSort(shown, [
+    (r) => r.label,
+    (r) => r.category,
+    (r) => toMs(r.startedAt ?? r.invitedAt),
+    (r) => (r.startedAt ? (r.endedAt ? Date.parse(r.endedAt) : now) - Date.parse(r.startedAt) : null),
+    (r) => (r.status === "ended" ? (END_REASONS[r.endReason ?? ""] ?? r.endReason) : null),
+  ]);
   const length = (r: LiveRow) => (r.startedAt ? duration((r.endedAt ? new Date(r.endedAt).getTime() : now) - new Date(r.startedAt).getTime()) : null);
 
   return (
@@ -50,7 +57,7 @@ export function LiveSessions({ search, category = "", initialSelected = null, on
       {error ? <Notice tone="error">{error}</Notice> : null}
       <div className="flex flex-wrap items-start gap-[18px]">
         <div className="min-w-0 flex-[999_1_480px]">
-          <Table head={["Between", "Category", "Started", "Duration", "Ended"]} minWidth={700}>
+          <Table head={["Between", "Category", "Started", "Duration", "Ended"]} minWidth={700} sort={sort}>
             {shown?.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-dim">
@@ -58,7 +65,7 @@ export function LiveSessions({ search, category = "", initialSelected = null, on
                 </td>
               </tr>
             ) : null}
-            {shown?.map((r) => (
+            {sorted?.map((r) => (
               <tr
                 key={r.id}
                 onClick={() => setSelected(r.id)}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Notice, SmallButton, StatusBadge, Table } from "../components/ui";
+import { Notice, SmallButton, StatusBadge, Table, time, useSort } from "../components/ui";
 import { api } from "../lib/api";
 import { ago, dateTime, place } from "../lib/format";
 import type { Category, Status, UserRow } from "../app/types";
@@ -43,6 +43,15 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
   }, [load, search]);
 
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? "?";
+  const pendingSort = useSort(rows, [(u) => u.username, (u) => time(u.createdAt), (u) => u.lastDevice?.deviceName]);
+  const userSort = useSort(rows, [
+    (u) => u.username,
+    (u) => u.status,
+    (u) => u.categoryIds.map(categoryName).join(", "),
+    (u) => u.lastDevice?.deviceName,
+    (u) => time(u.lastSeenAt ?? u.lastDevice?.at),
+  ]);
+  const { sorted, sort } = status === "pending" ? pendingSort : userSort;
 
   return (
     <>
@@ -83,7 +92,7 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
 
       <div className="flex flex-wrap items-start gap-[18px]">
         <div className="min-w-0 flex-[999_1_420px]">
-          <Table head={status === "pending" ? ["User", "Requested", "Sign-up device"] : ["User", "Status", "Categories", "Last device", "Last seen"]} minWidth={status === "pending" ? 520 : 760}>
+          <Table head={status === "pending" ? ["User", "Requested", "Sign-up device"] : ["User", "Status", "Categories", "Last device", "Last seen"]} minWidth={status === "pending" ? 520 : 760} sort={sort}>
             {rows?.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-dim">
@@ -91,7 +100,7 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
                 </td>
               </tr>
             ) : null}
-            {rows?.map((u) => (
+            {sorted?.map((u) => (
               <tr
                 key={u.id}
                 onClick={() => (u.status === "pending" ? setSelected(u) : onOpen(u.id))}

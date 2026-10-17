@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Notice, SmallButton, Table } from "../components/ui";
+import { Notice, SmallButton, Table, time, useSort } from "../components/ui";
 import { api } from "../lib/api";
 import {
   ago,
@@ -271,10 +271,20 @@ function AllTable({
           })),
         ].sort((a, b) => (a.at < b.at ? 1 : -1))
       : null;
+  const started = (item: Item) => time(item.kind === "chat" ? (item.row.acceptedAt ?? item.row.invitedAt) : (item.row.startedAt ?? item.row.invitedAt));
+  const { sorted, sort } = useSort(items, [
+    (i) => i.row.label,
+    (i) => (i.kind === "live" ? "live" : i.row.mode),
+    (i) => (i.kind === "live" && i.row.status === "active" ? "live now" : i.row.status),
+    (i) => i.row.category,
+    started,
+    (i) => time(i.at),
+  ]);
   return (
     <Table
       head={["Between", "Type", "Status", "Category", "Started", "Activity"]}
       minWidth={760}
+      sort={sort}
     >
       {items?.length === 0 ? (
         <tr>
@@ -283,7 +293,7 @@ function AllTable({
           </td>
         </tr>
       ) : null}
-      {items?.map((item) => {
+      {sorted?.map((item) => {
         const r = item.row;
         const [statusText, tone] =
           r.status === "active" && item.kind === "live"
@@ -357,8 +367,17 @@ export function ChatTable({
   onSelect: (id: string) => void;
   empty: string;
 }) {
+  const { sorted, sort } = useSort(rows, [
+    (c) => c.label,
+    (c) => `${c.mode}-${String(c.retentionMinutes).padStart(6, "0")}`,
+    (c) => c.category,
+    (c) => time(c.acceptedAt ?? c.invitedAt),
+    (c) => time(c.lastMessageAt),
+    (c) => (c.status === "ended" ? c.messagesSent : c.stored.bytes),
+  ]);
   return (
     <Table
+      sort={sort}
       head={[
         "Between",
         "Mode",
@@ -376,7 +395,7 @@ export function ChatTable({
           </td>
         </tr>
       ) : null}
-      {rows?.map((c) => (
+      {sorted?.map((c) => (
         <tr
           key={c.id}
           onClick={() => onSelect(c.id)}
