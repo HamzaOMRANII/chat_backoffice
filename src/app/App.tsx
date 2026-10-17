@@ -8,13 +8,14 @@ import { LoginPage } from "../pages/LoginPage";
 import { LogsPage } from "../pages/LogsPage";
 import { UserDetailsPage } from "../pages/UserDetailsPage";
 import { UsersPage } from "../pages/UsersPage";
+import { StoragePage } from "../pages/StoragePage";
 import type { Category, Status } from "./types";
 
 type Route = { section: Section; userId?: string };
 
 function parseHash(): Route {
   const [, section, id] = location.hash.split("/");
-  if (section === "categories" || section === "logs" || section === "chats") return { section };
+  if (section === "categories" || section === "logs" || section === "chats" || section === "storage") return { section };
   if (section === "users") return { section: "users", userId: id || undefined };
   return { section: "dashboard" };
 }
@@ -68,6 +69,7 @@ export function App() {
       {route.section === "logs" ? <LogsPage /> : null}
       {route.section === "dashboard" ? <DashboardPage /> : null}
       {route.section === "chats" ? <ChatsPage categories={categories} /> : null}
+      {route.section === "storage" ? <StoragePage /> : null}
     </Layout>
   );
 }
