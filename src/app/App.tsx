@@ -67,7 +67,7 @@ export function App() {
       {route.section === "categories" ? <CategoriesPage categories={categories} reload={loadCategories} /> : null}
       {route.section === "logs" ? <LogsPage /> : null}
       {route.section === "dashboard" ? <DashboardPage /> : null}
-      {route.section === "chats" ? <ChatsPage /> : null}
+      {route.section === "chats" ? <ChatsPage categories={categories} /> : null}
     </Layout>
   );
 }
