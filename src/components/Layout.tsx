@@ -1,17 +1,18 @@
 import type { ReactNode } from "react";
 import { Wordmark } from "./Logo";
 
-export type Section = "dashboard" | "users" | "chats" | "storage" | "categories" | "logs";
+export type Section = "dashboard" | "users" | "chats" | "groups" | "storage" | "categories" | "logs";
 
 const LINKS: [Section, string][] = [
   ["dashboard", "Dashboard"],
   ["users", "Users"],
   ["chats", "Chats"],
+  ["groups", "Groups"],
   ["storage", "Storage"],
   ["categories", "Categories"],
   ["logs", "Activity log"],
 ];
-const LATER = ["Groups · M8"];
+const LATER: string[] = [];
 
 /** Sidebar + content; the sidebar stacks above the content on a phone. */
 export function Layout({ current, pending, admin, onSignOut, children }: { current: Section; pending: number; admin: string; onSignOut: () => void; children: ReactNode }) {

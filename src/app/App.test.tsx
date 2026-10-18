@@ -317,4 +317,25 @@ describe("dashboard and chats", () => {
     await waitFor(() => expect(calls.find((c) => c.path.endsWith("/chats/purge"))?.body).toEqual({ confirm: "DELETE", ids: [CHAT.id], liveIds: [] }));
     expect(await screen.findByText(/Deleted 1 chat and 0 live chats · 23 messages/)).toBeInTheDocument();
   });
+
+  it("approves a group asked by a user, choosing its rules", async () => {
+    location.hash = "#/groups";
+    routes["GET /api/admin/auth/me"] = () => [200, { admin: { id: "1", username: "boss" } }];
+    routes["GET /api/admin/groups"] = () => [
+      200,
+      {
+        pending: 1,
+        groups: [
+          { id: "g1", name: "Weekend", status: "pending", categoryId: null, category: null, mode: null, retentionMinutes: null, members: [{ id: "u1", username: "hamza" }, { id: "u2", username: "leila.b" }], requestedBy: "hamza", createdAt: new Date().toISOString(), lastMessageAt: null, messageCount: 0 },
+        ],
+      },
+    ];
+    routes["PUT /api/admin/groups/g1"] = () => [200, { group: {} }];
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "Review and approve" }));
+    const panel = await screen.findByRole("complementary", { name: "Group Weekend" });
+    fireEvent.change(within(panel).getByLabelText("rules of category"), { target: { value: CATEGORIES[0]!.id } });
+    fireEvent.click(within(panel).getByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ name: "Weekend", categoryId: CATEGORIES[0]!.id, memberIds: ["u1", "u2"] }));
+  });
 });
