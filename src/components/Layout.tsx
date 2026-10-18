@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Wordmark } from "./Logo";
 
-export type Section = "dashboard" | "users" | "chats" | "groups" | "storage" | "categories" | "logs";
+export type Section = "dashboard" | "users" | "chats" | "groups" | "storage" | "categories" | "logs" | "settings";
 
 const LINKS: [Section, string][] = [
   ["dashboard", "Dashboard"],
@@ -11,6 +11,7 @@ const LINKS: [Section, string][] = [
   ["storage", "Storage"],
   ["categories", "Categories"],
   ["logs", "Activity log"],
+  ["settings", "Settings"],
 ];
 const LATER: string[] = [];
 
