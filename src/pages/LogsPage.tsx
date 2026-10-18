@@ -28,6 +28,12 @@ const ACTIONS: Record<string, string> = {
   "storage.request_cancelled": "cancelled the media request of",
   "storage.deleted": "deleted media",
   "storage.cleanup": "ran the storage cleanup",
+  "chats.purged": "deleted chats for good",
+  "group.created": "created a group",
+  "group.updated": "changed a group",
+  "group.approved": "approved a group asked by a user",
+  "group.refused": "refused the group asked by",
+  "group.deleted": "deleted a group",
 };
 
 export function LogsPage() {

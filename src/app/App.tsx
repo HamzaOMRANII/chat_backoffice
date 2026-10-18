@@ -9,13 +9,14 @@ import { LogsPage } from "../pages/LogsPage";
 import { UserDetailsPage } from "../pages/UserDetailsPage";
 import { UsersPage } from "../pages/UsersPage";
 import { StoragePage } from "../pages/StoragePage";
+import { GroupsPage } from "../pages/GroupsPage";
 import type { Category, Status } from "./types";
 
 type Route = { section: Section; userId?: string };
 
 function parseHash(): Route {
   const [, section, id] = location.hash.split("/");
-  if (section === "categories" || section === "logs" || section === "chats" || section === "storage") return { section };
+  if (section === "categories" || section === "logs" || section === "chats" || section === "storage" || section === "groups") return { section };
   if (section === "users") return { section: "users", userId: id || undefined };
   return { section: "dashboard" };
 }
@@ -70,6 +71,7 @@ export function App() {
       {route.section === "dashboard" ? <DashboardPage /> : null}
       {route.section === "chats" ? <ChatsPage categories={categories} /> : null}
       {route.section === "storage" ? <StoragePage /> : null}
+      {route.section === "groups" ? <GroupsPage categories={categories} /> : null}
     </Layout>
   );
 }
