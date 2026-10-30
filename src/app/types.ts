@@ -57,6 +57,8 @@ export type UserDetails = {
     mustReset?: boolean;
     locked: boolean;
     failedAttempts?: number;
+    secureCodeSetAt?: string;
+    secureCodeDisabled?: boolean;
   };
   currentDeviceId: string | null;
   devices: DeviceRow[];
