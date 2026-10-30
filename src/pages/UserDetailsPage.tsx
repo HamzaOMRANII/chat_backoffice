@@ -17,11 +17,13 @@ const BAD_EVENTS = new Set([
   "failed_password",
   "failed_code",
   "failed_passcode",
+  "failed_secure_code",
   "locked",
 ]);
 const WARN_EVENTS = new Set([
   "kicked",
   "passcode_used",
+  "secure_code_used",
   "admin_reset_used",
   "email_changed",
 ]);
@@ -323,6 +325,36 @@ export function UserDetailsPage({
                   ) : null}
                 </>
               )}
+            </Panel>
+            <Panel eyebrow="secure code">
+              <p className="m-0 text-[15px] font-bold">
+                {user.secureCodeDisabled
+                  ? "switched off"
+                  : user.secureCodeSetAt
+                    ? `set ${dateTime(user.secureCodeSetAt)}`
+                    : "not set"}
+              </p>
+              <p className="m-0 text-[12.5px] leading-snug text-dim">
+                Signs in instead of the emailed code (password still needed).
+                Each use emails the user.
+              </p>
+              {user.status === "approved" ? (
+                <SmallButton
+                  tone={user.secureCodeDisabled ? "primary" : "warn"}
+                  onClick={() =>
+                    act(
+                      user.secureCodeDisabled
+                        ? "Secure code allowed."
+                        : "Secure code switched off.",
+                      "/secure-code",
+                      "PUT",
+                      { allowed: Boolean(user.secureCodeDisabled) },
+                    )
+                  }
+                >
+                  {user.secureCodeDisabled ? "Allow" : "Switch off"}
+                </SmallButton>
+              ) : null}
             </Panel>
             <Panel eyebrow="current device">
               <p className="m-0 text-[15px] font-bold">
