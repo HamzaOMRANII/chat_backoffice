@@ -44,14 +44,22 @@ export function GroupsPage({ categories }: { categories: Category[] }) {
 
   const pending = groups?.filter((g) => g.status === "pending") ?? [];
   const active = groups?.filter((g) => g.status === "active") ?? null;
-  const { sorted, sort } = useSort(active, [(g) => g.name, (g) => g.category, (g) => g.members.length, (g) => g.retentionMinutes, (g) => time(g.lastMessageAt)]);
+  const { sorted, sort } = useSort(active, [
+    (g) => g.name,
+    (g) => g.category,
+    (g) => g.members.length,
+    (g) => g.retentionMinutes,
+    (g) => time(g.lastMessageAt),
+  ]);
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex grow flex-col gap-1">
           <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">Groups</h1>
-          <p className="m-0 font-mono text-[11.5px] text-faint">only the administrator creates groups and chooses who is in them · messages are end-to-end encrypted</p>
+          <p className="m-0 font-mono text-[11.5px] text-faint">
+            only the administrator creates groups and chooses who is in them · messages are end-to-end encrypted
+          </p>
         </div>
         <SmallButton tone="primary" onClick={() => setEditing("new")}>
           New group
@@ -116,7 +124,15 @@ export function GroupsPage({ categories }: { categories: Category[] }) {
                 <td className="font-mono text-xs">
                   {g.members.length} of {MAX}
                 </td>
-                <td>{g.mode && g.retentionMinutes ? <span className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] font-bold ${modeTone(g.mode)}`}>{modeLabel({ mode: g.mode, retentionMinutes: g.retentionMinutes })}</span> : "—"}</td>
+                <td>
+                  {g.mode && g.retentionMinutes ? (
+                    <span className={`rounded-full border px-2 py-0.5 font-mono text-[10.5px] font-bold ${modeTone(g.mode)}`}>
+                      {modeLabel({ mode: g.mode, retentionMinutes: g.retentionMinutes })}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td className="font-mono text-xs text-ink-soft">{g.lastMessageAt ? ago(g.lastMessageAt) : "—"}</td>
               </tr>
             ))}
@@ -140,7 +156,17 @@ export function GroupsPage({ categories }: { categories: Category[] }) {
   );
 }
 
-function GroupEditor({ group, categories, onDone, onClose }: { group: GroupRow | null; categories: Category[]; onDone: (text: string) => void; onClose: () => void }) {
+function GroupEditor({
+  group,
+  categories,
+  onDone,
+  onClose,
+}: {
+  group: GroupRow | null;
+  categories: Category[];
+  onDone: (text: string) => void;
+  onClose: () => void;
+}) {
   const [name, setName] = useState(group?.name ?? "");
   const [categoryId, setCategoryId] = useState(group?.categoryId ?? "");
   const [minutes, setMinutes] = useState(group?.retentionMinutes ?? 1440);
@@ -192,7 +218,10 @@ function GroupEditor({ group, categories, onDone, onClose }: { group: GroupRow |
 
   const field = "min-h-[42px] w-full rounded-field border border-line-strong bg-sunken px-3 text-sm text-ink outline-none focus:border-accent";
   return (
-    <aside aria-label={group ? `Group ${group.name}` : "New group"} className="flex flex-[1_1_380px] flex-col gap-3.5 rounded-[18px] border border-line-strong bg-panel p-5">
+    <aside
+      aria-label={group ? `Group ${group.name}` : "New group"}
+      className="flex flex-[1_1_380px] flex-col gap-3.5 rounded-[18px] border border-line-strong bg-panel p-5"
+    >
       <div className="flex items-center justify-between">
         <p className="eyebrow m-0">{pending ? `request from ${group?.requestedBy}` : group ? "group" : "new group"}</p>
         <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-lg bg-transparent text-dim">
@@ -226,7 +255,9 @@ function GroupEditor({ group, categories, onDone, onClose }: { group: GroupRow |
           </select>
         </label>
       </div>
-      {category && !allowed.length ? <p className="m-0 text-[12.5px] text-keep">{category.name} doesn't allow stored messages: choose another category.</p> : null}
+      {category && !allowed.length ? (
+        <p className="m-0 text-[12.5px] text-keep">{category.name} doesn't allow stored messages: choose another category.</p>
+      ) : null}
       <div className="flex flex-col gap-2">
         <span className="font-mono text-[10.5px] text-dim">
           members · {members.length} of {MAX}
@@ -235,7 +266,12 @@ function GroupEditor({ group, categories, onDone, onClose }: { group: GroupRow |
           {members.map((m) => (
             <span key={m.id} className="inline-flex items-center gap-1.5 rounded-full border border-line-strong py-1 pl-2.5 pr-1.5 text-[12.5px]">
               {m.username}
-              <button type="button" aria-label={`Remove ${m.username}`} onClick={() => setMembers((list) => list.filter((x) => x.id !== m.id))} className="grid size-5 place-items-center rounded-full bg-transparent text-danger-ink">
+              <button
+                type="button"
+                aria-label={`Remove ${m.username}`}
+                onClick={() => setMembers((list) => list.filter((x) => x.id !== m.id))}
+                className="grid size-5 place-items-center rounded-full bg-transparent text-danger-ink"
+              >
                 ✕
               </button>
             </span>
@@ -261,7 +297,9 @@ function GroupEditor({ group, categories, onDone, onClose }: { group: GroupRow |
           </button>
         ))}
       </div>
-      <p className="m-0 text-[12.5px] leading-normal text-dim">Removing someone: their devices can't read anything sent after that moment. What they already received stays until it expires.</p>
+      <p className="m-0 text-[12.5px] leading-normal text-dim">
+        Removing someone: their devices can't read anything sent after that moment. What they already received stays until it expires.
+      </p>
       {error ? <Notice tone="error">{error}</Notice> : null}
       <div className="flex flex-wrap gap-2">
         <SmallButton tone="primary" disabled={name.trim().length < 2 || !categoryId || !allowed.length || members.length < 2} onClick={() => void save()}>

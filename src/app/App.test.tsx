@@ -11,7 +11,13 @@ const CATEGORIES = ["Family", "Friends", "Pro", "Externals", "Secret", "Confiden
   name,
   order: i + 1,
   members: 0,
-  rules: { modes: name === "Secret" ? ["live"] : ["live", "keep", "auto"], maxRetentionDays: name === "Secret" ? 0 : 7, files: "all", export: true, calls: "video" },
+  rules: {
+    modes: name === "Secret" ? ["live"] : ["live", "keep", "auto"],
+    maxRetentionDays: name === "Secret" ? 0 : 7,
+    files: "all",
+    export: true,
+    calls: "video",
+  },
 }));
 const PENDING = {
   id: "a".repeat(24),
@@ -28,7 +34,11 @@ const DASHBOARD = {
   online: { total: 5, android: 3 },
   chats: { active: 9, keep: 6, auto: 3, invited: 2 },
   messages: { last24h: 312, stored: 1420, storedBytes: 3_250_000 },
-  attention: { pending: [{ id: "a".repeat(24), username: "rami.t", at: new Date().toISOString() }], locked: [{ id: "b".repeat(24), username: "nadia.s", until: new Date(Date.now() + 9e5).toISOString() }], pausedContacts: 2 },
+  attention: {
+    pending: [{ id: "a".repeat(24), username: "rami.t", at: new Date().toISOString() }],
+    locked: [{ id: "b".repeat(24), username: "nadia.s", until: new Date(Date.now() + 9e5).toISOString() }],
+    pausedContacts: 2,
+  },
   logins: [{ username: "leila.b", userId: "c".repeat(24), at: new Date().toISOString(), deviceName: "Galaxy S23", platform: "android" }],
 };
 
@@ -99,7 +109,16 @@ describe("user contacts", () => {
     routes[`GET /api/admin/users/${id}`] = () => [
       200,
       {
-        user: { id, username: "hamza", email: "hamza@example.com", status: "approved", categoryIds: ["2".padStart(24, "0"), "3".padStart(24, "0")], createdAt: new Date().toISOString(), approvedBy: "boss", locked: false },
+        user: {
+          id,
+          username: "hamza",
+          email: "hamza@example.com",
+          status: "approved",
+          categoryIds: ["2".padStart(24, "0"), "3".padStart(24, "0")],
+          createdAt: new Date().toISOString(),
+          approvedBy: "boss",
+          locked: false,
+        },
         currentDeviceId: null,
         devices: [],
         events: [],
@@ -110,13 +129,63 @@ describe("user contacts", () => {
       {
         personalId: "HC-U2C2-S832",
         contacts: [
-          row({ id: "f1", user: { id: "c".repeat(24), username: "leila.b", status: "approved", online: true, lastSeenAt: null }, sharedCategoryIds: ["2".padStart(24, "0"), "3".padStart(24, "0")], categoryId: "2".padStart(24, "0") }),
-          row({ id: "f2", user: { id: "d".repeat(24), username: "rami.t", status: "approved", online: false, lastSeenAt: null }, sharedCategoryIds: [], categoryId: null, paused: true }),
+          row({
+            id: "f1",
+            user: { id: "c".repeat(24), username: "leila.b", status: "approved", online: true, lastSeenAt: null },
+            sharedCategoryIds: ["2".padStart(24, "0"), "3".padStart(24, "0")],
+            categoryId: "2".padStart(24, "0"),
+          }),
+          row({
+            id: "f2",
+            user: { id: "d".repeat(24), username: "rami.t", status: "approved", online: false, lastSeenAt: null },
+            sharedCategoryIds: [],
+            categoryId: null,
+            paused: true,
+          }),
         ],
-        requests: [row({ id: "f3", status: "pending", direction: "received", user: { id: "e".repeat(24), username: "sara.m", status: "approved", online: false, lastSeenAt: null }, sharedCategoryIds: ["2".padStart(24, "0")], categoryId: "2".padStart(24, "0") })],
+        requests: [
+          row({
+            id: "f3",
+            status: "pending",
+            direction: "received",
+            user: { id: "e".repeat(24), username: "sara.m", status: "approved", online: false, lastSeenAt: null },
+            sharedCategoryIds: ["2".padStart(24, "0")],
+            categoryId: "2".padStart(24, "0"),
+          }),
+        ],
       },
     ];
     routes["PUT /api/admin/friendships/f1/category"] = () => [200, { ok: true }];
+    routes[`GET /api/admin/chats?status=all&user=${id}`] = () => [
+      200,
+      {
+        counts: { active: 1, invited: 0, ended: 0 },
+        chats: [
+          {
+            id: "9".repeat(24),
+            people: [
+              { id, username: "hamza" },
+              { id: "c".repeat(24), username: "leila.b" },
+            ],
+            label: "hamza + leila.b",
+            mode: "keep",
+            retentionMinutes: 4320,
+            status: "active",
+            category: "Pro",
+            startedBy: "hamza",
+            invitedAt: new Date().toISOString(),
+            acceptedAt: new Date().toISOString(),
+            endedAt: null,
+            endReason: null,
+            endedBy: null,
+            lastMessageAt: new Date().toISOString(),
+            messagesSent: 4,
+            stored: { count: 4, bytes: 1200, nextExpiry: new Date(Date.now() + 2e8).toISOString() },
+          },
+        ],
+      },
+    ];
+    routes[`DELETE /api/admin/users/${id}/chats`] = () => [200, { ok: true, chats: 1, deleted: 4 }];
     location.hash = `#/users/${id}`;
     render(<App />);
 
@@ -131,6 +200,18 @@ describe("user contacts", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Requests · 1" }));
     expect(screen.getByText("sara.m")).toBeInTheDocument();
+
+    // The user's chats, and deleting all their history (typing the username confirms)
+    fireEvent.click(screen.getByRole("tab", { name: "Chats · 1" }));
+    expect(screen.getByText("hamza + leila.b")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete all chat history" }));
+    const deleteAll = screen.getByRole("button", { name: "Delete all" });
+    expect(deleteAll).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Type the username to confirm"), { target: { value: "hamza" } });
+    fireEvent.click(deleteAll);
+    await waitFor(() => expect(calls.some((c) => c.method === "DELETE" && c.path === `/api/admin/users/${id}/chats`)).toBe(true));
+    expect(calls.find((c) => c.method === "DELETE")!.body).toEqual({ confirm: "hamza" });
+    expect(await screen.findByText("All chat history deleted.")).toBeInTheDocument();
   });
 });
 
@@ -145,7 +226,11 @@ describe("users list", () => {
     expect(screen.getByText("pending")).toBeInTheDocument();
     expect(screen.getByText("approved")).toBeInTheDocument();
     // Sorting by a column: ascending, descending, then back to the server's order
-    const names = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelector("td button")?.textContent);
+    const names = () =>
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((r) => r.querySelector("td button")?.textContent);
     expect(names()).toEqual(["leila.b", "hamza"]);
     fireEvent.click(screen.getByRole("button", { name: /^User/ }));
     expect(names()).toEqual(["hamza", "leila.b"]);
@@ -201,7 +286,21 @@ describe("dashboard and chats", () => {
     routes["GET /api/admin/live"] = () => [200, { live: [], now: 0 }];
     routes[`GET /api/admin/chats/${CHAT.id}`] = () => [
       200,
-      { chat: CHAT, messages: [{ id: "m1", from: "hamza", to: "leila.b", size: 184, sentAt: new Date().toISOString(), deliveredAt: new Date().toISOString(), readAt: null, expiresAt: new Date().toISOString() }] },
+      {
+        chat: CHAT,
+        messages: [
+          {
+            id: "m1",
+            from: "hamza",
+            to: "leila.b",
+            size: 184,
+            sentAt: new Date().toISOString(),
+            deliveredAt: new Date().toISOString(),
+            readAt: null,
+            expiresAt: new Date().toISOString(),
+          },
+        ],
+      },
     ];
     routes[`DELETE /api/admin/chats/${CHAT.id}`] = () => [200, { ok: true, deleted: 23 }];
     render(<App />);
@@ -231,8 +330,30 @@ describe("dashboard and chats", () => {
       {
         now: 1,
         live: [
-          { id: "l1", label: "hamza + leila.b", status: "active", category: "Pro", startedBy: "hamza", invitedAt: started, startedAt: started, endedAt: null, endReason: null, endedBy: null },
-          { id: "l2", label: "hamza + rami.t", status: "ended", category: "Friends", startedBy: "hamza", invitedAt: started, startedAt: started, endedAt: new Date(Date.parse(started) + 520_000).toISOString(), endReason: "left", endedBy: "rami.t" },
+          {
+            id: "l1",
+            label: "hamza + leila.b",
+            status: "active",
+            category: "Pro",
+            startedBy: "hamza",
+            invitedAt: started,
+            startedAt: started,
+            endedAt: null,
+            endReason: null,
+            endedBy: null,
+          },
+          {
+            id: "l2",
+            label: "hamza + rami.t",
+            status: "ended",
+            category: "Friends",
+            startedBy: "hamza",
+            invitedAt: started,
+            startedAt: started,
+            endedAt: new Date(Date.parse(started) + 520_000).toISOString(),
+            endReason: "left",
+            endedBy: "rami.t",
+          },
         ],
       },
     ];
@@ -243,7 +364,11 @@ describe("dashboard and chats", () => {
     expect(screen.getByRole("button", { name: "hamza + rami.t" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "hamza + leila.b" })).toHaveLength(2); // the stored chat and the live one
     // Sorted by type: KEEP before LIVE, then the other way round
-    const kinds = () => screen.getAllByRole("row").slice(1).map((r) => r.querySelectorAll("td")[2]?.textContent);
+    const kinds = () =>
+      screen
+        .getAllByRole("row")
+        .slice(1)
+        .map((r) => r.querySelectorAll("td")[2]?.textContent);
     fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
     expect(kinds()[0]).toMatch(/KEEP/);
     fireEvent.click(screen.getByRole("button", { name: /^Type/ }));
@@ -283,7 +408,11 @@ describe("dashboard and chats", () => {
     ];
     routes[`GET /api/admin/storage/users/${uid}`] = () => [
       200,
-      { user: { username: "youssef.k", request: null }, quota: 2 * 1024 ** 3, files: [{ id: "f1", kind: "video", size: 640e6, to: "sara.m", createdAt: null, expiresAt: new Date(Date.now() + 2 * 864e5).toISOString() }] },
+      {
+        user: { username: "youssef.k", request: null },
+        quota: 2 * 1024 ** 3,
+        files: [{ id: "f1", kind: "video", size: 640e6, to: "sara.m", createdAt: null, expiresAt: new Date(Date.now() + 2 * 864e5).toISOString() }],
+      },
     ];
     routes[`POST /api/admin/storage/users/${uid}/request`] = () => [200, { deadline: new Date().toISOString() }];
     routes["POST /api/admin/storage/delete"] = () => [200, { deleted: 9, bytes: 1.62e9 }];
@@ -326,7 +455,23 @@ describe("dashboard and chats", () => {
       {
         pending: 1,
         groups: [
-          { id: "g1", name: "Weekend", status: "pending", categoryId: null, category: null, mode: null, retentionMinutes: null, members: [{ id: "u1", username: "hamza" }, { id: "u2", username: "leila.b" }], requestedBy: "hamza", createdAt: new Date().toISOString(), lastMessageAt: null, messageCount: 0 },
+          {
+            id: "g1",
+            name: "Weekend",
+            status: "pending",
+            categoryId: null,
+            category: null,
+            mode: null,
+            retentionMinutes: null,
+            members: [
+              { id: "u1", username: "hamza" },
+              { id: "u2", username: "leila.b" },
+            ],
+            requestedBy: "hamza",
+            createdAt: new Date().toISOString(),
+            lastMessageAt: null,
+            messageCount: 0,
+          },
         ],
       },
     ];
@@ -336,6 +481,8 @@ describe("dashboard and chats", () => {
     const panel = await screen.findByRole("complementary", { name: "Group Weekend" });
     fireEvent.change(within(panel).getByLabelText("rules of category"), { target: { value: CATEGORIES[0]!.id } });
     fireEvent.click(within(panel).getByRole("button", { name: "Approve" }));
-    await waitFor(() => expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ name: "Weekend", categoryId: CATEGORIES[0]!.id, memberIds: ["u1", "u2"] }));
+    await waitFor(() =>
+      expect(calls.find((c) => c.method === "PUT")?.body).toMatchObject({ name: "Weekend", categoryId: CATEGORIES[0]!.id, memberIds: ["u1", "u2"] }),
+    );
   });
 });

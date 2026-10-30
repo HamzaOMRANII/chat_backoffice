@@ -17,7 +17,7 @@ const summary = (r: Rules) => `${r.files === "all" ? "✓" : r.files === "p2p" ?
 export function CategoriesPage({ categories, reload }: { categories: Category[]; reload: () => Promise<void> }) {
   const [editingId, setEditingId] = useState<string | "new" | null>(null);
   const [error, setError] = useState("");
-  const editing = editingId === "new" ? null : categories.find((c) => c.id === editingId) ?? null;
+  const editing = editingId === "new" ? null : (categories.find((c) => c.id === editingId) ?? null);
 
   async function move(index: number, delta: number) {
     const ids = categories.map((c) => c.id);
@@ -36,7 +36,9 @@ export function CategoriesPage({ categories, reload }: { categories: Category[];
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex grow flex-col gap-1">
           <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">Categories</h1>
-          <p className="m-0 text-[13.5px] text-dim">Users only see each other if they share one. Users never see category names. Order decides which one a friendship uses.</p>
+          <p className="m-0 text-[13.5px] text-dim">
+            Users only see each other if they share one. Users never see category names. Order decides which one a friendship uses.
+          </p>
         </div>
         <SmallButton tone="primary" onClick={() => setEditingId("new")}>
           New category
@@ -47,22 +49,44 @@ export function CategoriesPage({ categories, reload }: { categories: Category[];
         <div className="min-w-0 flex-[999_1_460px]">
           <Table head={["#", "Category", "Modes", "Kept", "Files · export · calls", "Users", "Order"]} minWidth={720}>
             {categories.map((c, i) => (
-              <tr key={c.id} onClick={() => setEditingId(c.id)} className={`cursor-pointer hover:bg-raised ${editingId === c.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}>
+              <tr
+                key={c.id}
+                onClick={() => setEditingId(c.id)}
+                className={`cursor-pointer hover:bg-raised ${editingId === c.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}
+              >
                 <td className="font-mono text-faint">{c.order}</td>
                 <td>
                   <button type="button" className="bg-transparent p-0 font-bold text-ink">
                     {c.name}
                   </button>
                 </td>
-                <td className="font-mono text-[11.5px]">{c.rules.modes.length === 1 && c.rules.modes[0] === "live" ? <span className="text-live">LIVE only</span> : c.rules.modes.map((m) => MODE_LABELS[m][0]).join(" ")}</td>
+                <td className="font-mono text-[11.5px]">
+                  {c.rules.modes.length === 1 && c.rules.modes[0] === "live" ? (
+                    <span className="text-live">LIVE only</span>
+                  ) : (
+                    c.rules.modes.map((m) => MODE_LABELS[m][0]).join(" ")
+                  )}
+                </td>
                 <td>{c.rules.modes.some((m) => m !== "live") ? `${c.rules.maxRetentionDays} d` : "never"}</td>
                 <td className="text-ink-soft">{summary(c.rules)}</td>
                 <td className="font-mono">{c.members}</td>
                 <td onClick={(e) => e.stopPropagation()} className="whitespace-nowrap">
-                  <button type="button" aria-label={`Move ${c.name} up`} disabled={i === 0} onClick={() => move(i, -1)} className="size-8 rounded-lg border border-line-strong bg-transparent text-ink disabled:opacity-30">
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} up`}
+                    disabled={i === 0}
+                    onClick={() => move(i, -1)}
+                    className="size-8 rounded-lg border border-line-strong bg-transparent text-ink disabled:opacity-30"
+                  >
                     ↑
                   </button>{" "}
-                  <button type="button" aria-label={`Move ${c.name} down`} disabled={i === categories.length - 1} onClick={() => move(i, 1)} className="size-8 rounded-lg border border-line-strong bg-transparent text-ink disabled:opacity-30">
+                  <button
+                    type="button"
+                    aria-label={`Move ${c.name} down`}
+                    disabled={i === categories.length - 1}
+                    onClick={() => move(i, 1)}
+                    className="size-8 rounded-lg border border-line-strong bg-transparent text-ink disabled:opacity-30"
+                  >
                     ↓
                   </button>
                 </td>
@@ -96,8 +120,7 @@ function Editor({ category, onSaved, onCancel }: { category: Category | null; on
     if (category) void api<{ members: typeof members }>(`/categories/${category.id}/members`).then((r) => setMembers(r.members));
   }, [category]);
 
-  const toggleMode = (m: Rules["modes"][number]) =>
-    setRules((r) => ({ ...r, modes: r.modes.includes(m) ? r.modes.filter((x) => x !== m) : [...r.modes, m] }));
+  const toggleMode = (m: Rules["modes"][number]) => setRules((r) => ({ ...r, modes: r.modes.includes(m) ? r.modes.filter((x) => x !== m) : [...r.modes, m] }));
 
   async function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -129,24 +152,42 @@ function Editor({ category, onSaved, onCancel }: { category: Category | null; on
 
   const select = "min-h-10 rounded-[10px] border border-line-strong bg-bg px-2 text-[13px] text-ink";
   return (
-    <form onSubmit={save} aria-label={category ? `Edit ${category.name}` : "New category"} className="flex flex-[1_1_340px] flex-col gap-4 rounded-[18px] border border-line-strong bg-panel p-5">
+    <form
+      onSubmit={save}
+      aria-label={category ? `Edit ${category.name}` : "New category"}
+      className="flex flex-[1_1_340px] flex-col gap-4 rounded-[18px] border border-line-strong bg-panel p-5"
+    >
       <label className="flex flex-col gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] text-dim">
         Name
-        <input name="name" defaultValue={category?.name ?? ""} required maxLength={40} className="min-h-11 rounded-field border border-line-strong bg-bg px-3 font-sans text-[15px] normal-case tracking-normal text-ink outline-none focus:border-accent" />
+        <input
+          name="name"
+          defaultValue={category?.name ?? ""}
+          required
+          maxLength={40}
+          className="min-h-11 rounded-field border border-line-strong bg-bg px-3 font-sans text-[15px] normal-case tracking-normal text-ink outline-none focus:border-accent"
+        />
       </label>
       <fieldset className="m-0 flex flex-col gap-2 border-0 p-0">
         <legend className="mb-2 p-0 text-sm font-bold">Chat modes allowed</legend>
         {(Object.keys(MODE_LABELS) as Rules["modes"]).map((m) => (
           <label key={m} className="flex items-center gap-2 text-[13.5px]">
             <input type="checkbox" checked={rules.modes.includes(m)} onChange={() => toggleMode(m)} className="size-[18px] accent-brand" />
-            <span className={`font-mono ${m === "live" ? "text-live" : m === "keep" ? "text-keep" : "text-auto"}`}>{MODE_LABELS[m][0]}</span> {MODE_LABELS[m][1]}
+            <span className={`font-mono ${m === "live" ? "text-live" : m === "keep" ? "text-keep" : "text-auto"}`}>{MODE_LABELS[m][0]}</span>{" "}
+            {MODE_LABELS[m][1]}
           </label>
         ))}
       </fieldset>
       {rules.modes.includes("keep") ? (
         <label className="flex flex-col gap-1.5 text-[12.5px] text-dim">
           Keep-alive maximum: {rules.maxRetentionDays || 1} day{(rules.maxRetentionDays || 1) > 1 ? "s" : ""}
-          <input type="range" min={1} max={7} value={rules.maxRetentionDays || 1} onChange={(e) => setRules((r) => ({ ...r, maxRetentionDays: Number(e.target.value) }))} className="accent-brand" />
+          <input
+            type="range"
+            min={1}
+            max={7}
+            value={rules.maxRetentionDays || 1}
+            onChange={(e) => setRules((r) => ({ ...r, maxRetentionDays: Number(e.target.value) }))}
+            className="accent-brand"
+          />
         </label>
       ) : null}
       <div className="grid grid-cols-3 gap-2">
@@ -154,7 +195,9 @@ function Editor({ category, onSaved, onCancel }: { category: Category | null; on
           Files
           <select value={rules.files} onChange={(e) => setRules((r) => ({ ...r, files: e.target.value as Rules["files"] }))} className={select}>
             {Object.entries(FILES).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+              <option key={v} value={v}>
+                {l}
+              </option>
             ))}
           </select>
         </label>
@@ -169,7 +212,9 @@ function Editor({ category, onSaved, onCancel }: { category: Category | null; on
           Calls
           <select value={rules.calls} onChange={(e) => setRules((r) => ({ ...r, calls: e.target.value as Rules["calls"] }))} className={select}>
             {Object.entries(CALLS).map(([v, l]) => (
-              <option key={v} value={v}>{l}</option>
+              <option key={v} value={v}>
+                {l}
+              </option>
             ))}
           </select>
         </label>

@@ -17,7 +17,8 @@ type Route = { section: Section; userId?: string };
 
 function parseHash(): Route {
   const [, section, id] = location.hash.split("/");
-  if (section === "categories" || section === "logs" || section === "chats" || section === "storage" || section === "groups" || section === "settings") return { section };
+  if (section === "categories" || section === "logs" || section === "chats" || section === "storage" || section === "groups" || section === "settings")
+    return { section };
   if (section === "users") return { section: "users", userId: id || undefined };
   return { section: "dashboard" };
 }
@@ -66,7 +67,9 @@ export function App() {
       {route.section === "users" && route.userId ? (
         <UserDetailsPage key={route.userId} id={route.userId} categories={categories} onBack={() => (location.hash = "#/users")} />
       ) : null}
-      {route.section === "users" && !route.userId ? <UsersPage categories={categories} onCounts={onCounts} onOpen={(id) => (location.hash = `#/users/${id}`)} /> : null}
+      {route.section === "users" && !route.userId ? (
+        <UsersPage categories={categories} onCounts={onCounts} onOpen={(id) => (location.hash = `#/users/${id}`)} />
+      ) : null}
       {route.section === "categories" ? <CategoriesPage categories={categories} reload={loadCategories} /> : null}
       {route.section === "logs" ? <LogsPage /> : null}
       {route.section === "dashboard" ? <DashboardPage /> : null}

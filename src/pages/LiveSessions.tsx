@@ -7,7 +7,17 @@ import type { LiveRow } from "../app/types";
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
 /** Live chats: who, when and how long. What is typed only passes through the server, encrypted, and is never stored. */
-export function LiveSessions({ search, category = "", initialSelected = null, onCount }: { search: string; category?: string; initialSelected?: string | null; onCount: (n: number) => void }) {
+export function LiveSessions({
+  search,
+  category = "",
+  initialSelected = null,
+  onCount,
+}: {
+  search: string;
+  category?: string;
+  initialSelected?: string | null;
+  onCount: (n: number) => void;
+}) {
   const [rows, setRows] = useState<LiveRow[] | null>(null);
   const [selected, setSelected] = useState<string | null>(initialSelected);
   const [error, setError] = useState("");
@@ -90,7 +100,10 @@ export function LiveSessions({ search, category = "", initialSelected = null, on
         </div>
 
         {current ? (
-          <aside aria-label={`Live chat ${current.label}`} className="flex flex-[1_1_340px] flex-col gap-3.5 rounded-[18px] border border-line-strong bg-panel p-5">
+          <aside
+            aria-label={`Live chat ${current.label}`}
+            className="flex flex-[1_1_340px] flex-col gap-3.5 rounded-[18px] border border-line-strong bg-panel p-5"
+          >
             <div className="flex flex-col gap-1">
               <p className="eyebrow m-0">live chat</p>
               <h2 className="m-0 text-xl font-extrabold">{current.label}</h2>

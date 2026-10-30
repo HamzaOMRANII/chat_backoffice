@@ -59,7 +59,8 @@ export function useSort<T>(rows: T[] | null, keys: (((row: T) => SortValue) | nu
           if (x === y) return 0;
           if (x === null || x === undefined || x === "") return 1;
           if (y === null || y === undefined || y === "") return -1;
-          const order = typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), undefined, { sensitivity: "base", numeric: true });
+          const order =
+            typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), undefined, { sensitivity: "base", numeric: true });
           return order * sort.dir;
         })
       : rows;
@@ -115,15 +116,33 @@ export function Table({
   );
 }
 
-export function SmallButton({ children, onClick, tone = "default", disabled, type = "button" }: { children: ReactNode; onClick?: () => void; tone?: "default" | "warn" | "danger" | "primary"; disabled?: boolean; type?: "button" | "submit" }) {
+export function SmallButton({
+  children,
+  onClick,
+  tone = "default",
+  disabled,
+  type = "button",
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  tone?: "default" | "warn" | "danger" | "primary";
+  disabled?: boolean;
+  type?: "button" | "submit";
+}) {
   const styles = {
     default: "border border-line-strong bg-panel text-ink hover:border-accent",
     primary: "border-0 bg-brand text-white hover:bg-brand-hover",
     warn: "border border-keep-line bg-panel text-keep",
-    danger: "border border-dashed border-danger bg-transparent font-mono text-xs uppercase tracking-[0.04em] text-danger-ink before:content-['[_'] after:content-['_]'] hover:bg-danger/10",
+    danger:
+      "border border-dashed border-danger bg-transparent font-mono text-xs uppercase tracking-[0.04em] text-danger-ink before:content-['[_'] after:content-['_]'] hover:bg-danger/10",
   }[tone];
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`min-h-[42px] rounded-field px-3.5 text-[13.5px] font-semibold disabled:opacity-50 ${styles}`}>
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`min-h-[42px] rounded-field px-3.5 text-[13.5px] font-semibold disabled:opacity-50 ${styles}`}
+    >
       {children}
     </button>
   );

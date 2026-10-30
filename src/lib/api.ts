@@ -24,7 +24,13 @@ export async function api<T = Record<string, unknown>>(path: string, options: { 
     throw new ApiError(0, "network", "No connection to the server.");
   }
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  if (!res.ok) throw new ApiError(res.status, String(data.code ?? "error"), String(data.error ?? "Something went wrong"), data.details as Record<string, unknown> | undefined);
+  if (!res.ok)
+    throw new ApiError(
+      res.status,
+      String(data.code ?? "error"),
+      String(data.error ?? "Something went wrong"),
+      data.details as Record<string, unknown> | undefined,
+    );
   return data as T;
 }
 

@@ -30,7 +30,7 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
       setRows(res.users);
       setCounts(res.counts);
       onCounts(res.counts);
-      setSelected((current) => res.users.find((u) => u.id === current?.id) ?? (status === "pending" ? res.users[0] ?? null : null));
+      setSelected((current) => res.users.find((u) => u.id === current?.id) ?? (status === "pending" ? (res.users[0] ?? null) : null));
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't load users");
@@ -92,7 +92,11 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
 
       <div className="flex flex-wrap items-start gap-[18px]">
         <div className="min-w-0 flex-[999_1_420px]">
-          <Table head={status === "pending" ? ["User", "Requested", "Sign-up device"] : ["User", "Status", "Categories", "Last device", "Last seen"]} minWidth={status === "pending" ? 520 : 760} sort={sort}>
+          <Table
+            head={status === "pending" ? ["User", "Requested", "Sign-up device"] : ["User", "Status", "Categories", "Last device", "Last seen"]}
+            minWidth={status === "pending" ? 520 : 760}
+            sort={sort}
+          >
             {rows?.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-dim">
@@ -107,7 +111,14 @@ export function UsersPage({ categories, onCounts, onOpen }: Props) {
                 className={`cursor-pointer hover:bg-raised ${selected?.id === u.id ? "bg-raised shadow-[inset_3px_0_0_var(--color-accent)]" : ""}`}
               >
                 <td>
-                  <button type="button" className="bg-transparent p-0 text-left font-bold text-ink" onClick={(e) => { e.stopPropagation(); onOpen(u.id); }}>
+                  <button
+                    type="button"
+                    className="bg-transparent p-0 text-left font-bold text-ink"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpen(u.id);
+                    }}
+                  >
                     {u.username}
                   </button>
                   <div className="text-xs text-dim">{u.email}</div>
@@ -172,7 +183,10 @@ function Review({ user, categories, onDone }: { user: UserRow; categories: Categ
           {categories.map((c) => {
             const on = picked.includes(c.id);
             return (
-              <label key={c.id} className={`flex min-h-10 items-center gap-2 rounded-[10px] border px-3 text-[13.5px] ${on ? "border-accent bg-accent/10" : "border-line-strong"}`}>
+              <label
+                key={c.id}
+                className={`flex min-h-10 items-center gap-2 rounded-[10px] border px-3 text-[13.5px] ${on ? "border-accent bg-accent/10" : "border-line-strong"}`}
+              >
                 <input
                   type="checkbox"
                   checked={on}

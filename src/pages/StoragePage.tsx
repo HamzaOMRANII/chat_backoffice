@@ -54,7 +54,14 @@ export function StoragePage() {
     }
   }
 
-  const { sorted, sort } = useSort(data?.users ?? null, [(u) => u.username, (u) => u.files, (u) => u.bytes, (u) => u.bytes, (u) => time(u.nextExpiry), (u) => time(u.request)]);
+  const { sorted, sort } = useSort(data?.users ?? null, [
+    (u) => u.username,
+    (u) => u.files,
+    (u) => u.bytes,
+    (u) => u.bytes,
+    (u) => time(u.nextExpiry),
+    (u) => time(u.request),
+  ]);
   const d = data?.disk;
   const full = d ? d.ratio >= d.limit : false;
 
@@ -75,11 +82,18 @@ export function StoragePage() {
             {[
               ["files stored", String(data.files), `in ${data.chats} chat${data.chats === 1 ? "" : "s"}`, ""],
               ["space used", bytes(data.bytes), `of ${bytes(d.total)} server disk`, ""],
-              ["server disk", pct(d.ratio), full ? "uploads are stopped" : `uploads stop at ${pct(d.limit)}`, full ? "text-danger-ink" : d.ratio > d.limit - 0.1 ? "text-keep" : "text-online"],
+              [
+                "server disk",
+                pct(d.ratio),
+                full ? "uploads are stopped" : `uploads stop at ${pct(d.limit)}`,
+                full ? "text-danger-ink" : d.ratio > d.limit - 0.1 ? "text-keep" : "text-online",
+              ],
               [
                 "last cleanup",
                 data.lastCleanup ? ago(data.lastCleanup.at) : "—",
-                data.lastCleanup ? `${data.lastCleanup.files} file${data.lastCleanup.files === 1 ? "" : "s"} · ${bytes(data.lastCleanup.bytes)} freed · runs every minute` : "runs every minute",
+                data.lastCleanup
+                  ? `${data.lastCleanup.files} file${data.lastCleanup.files === 1 ? "" : "s"} · ${bytes(data.lastCleanup.bytes)} freed · runs every minute`
+                  : "runs every minute",
                 "",
               ],
             ].map(([label, value, sub, tone]) => (
@@ -98,10 +112,15 @@ export function StoragePage() {
               </span>
             </div>
             <div className="relative h-2 rounded-full bg-line">
-              <div className={`h-full rounded-full ${full ? "bg-danger" : d.ratio > d.limit - 0.1 ? "bg-keep" : "bg-online"}`} style={{ width: pct(Math.min(1, d.ratio)) }} />
+              <div
+                className={`h-full rounded-full ${full ? "bg-danger" : d.ratio > d.limit - 0.1 ? "bg-keep" : "bg-online"}`}
+                style={{ width: pct(Math.min(1, d.ratio)) }}
+              />
               <div className="absolute -top-[5px] h-[18px] w-0.5 bg-danger" style={{ left: pct(d.limit) }} aria-hidden="true" />
             </div>
-            <p className="m-0 font-mono text-[11px] text-faint">at {pct(d.limit)} new uploads are refused until space is freed; messages and live chats keep working</p>
+            <p className="m-0 font-mono text-[11px] text-faint">
+              at {pct(d.limit)} new uploads are refused until space is freed; messages and live chats keep working
+            </p>
           </div>
         </>
       ) : null}
@@ -205,7 +224,10 @@ function UserMedia({ id, onChanged }: { id: string; onChanged: (text: string) =>
       {data.files.length ? (
         <div className="flex max-h-[320px] flex-col overflow-y-auto rounded-xl border border-line font-mono text-[11.5px]">
           {data.files.map((f, i) => (
-            <label key={f.id} className={`grid cursor-pointer grid-cols-[18px_1fr_auto_auto] items-center gap-2.5 px-3 py-2.5 text-ink-soft ${i ? "border-t border-line" : ""}`}>
+            <label
+              key={f.id}
+              className={`grid cursor-pointer grid-cols-[18px_1fr_auto_auto] items-center gap-2.5 px-3 py-2.5 text-ink-soft ${i ? "border-t border-line" : ""}`}
+            >
               <input
                 type="checkbox"
                 checked={picked.has(f.id)}
@@ -231,7 +253,9 @@ function UserMedia({ id, onChanged }: { id: string; onChanged: (text: string) =>
         {data.user.request ? (
           <>
             <p className="m-0 text-[12.5px] text-keep">Asked · deleted {dateTime(data.user.request)}</p>
-            <SmallButton onClick={() => void run(() => api(`/storage/users/${id}/request`, { method: "DELETE" }), `Request to ${name} cancelled.`)}>Cancel the request</SmallButton>
+            <SmallButton onClick={() => void run(() => api(`/storage/users/${id}/request`, { method: "DELETE" }), `Request to ${name} cancelled.`)}>
+              Cancel the request
+            </SmallButton>
           </>
         ) : (
           <>
@@ -258,13 +282,16 @@ function UserMedia({ id, onChanged }: { id: string; onChanged: (text: string) =>
             </SmallButton>
           </>
         )}
-        <p className="m-0 text-[11.5px] leading-normal text-faint">{name} gets a notification and a banner with the deadline, reminded 24 h and 1 h before. Then the files are deleted automatically.</p>
+        <p className="m-0 text-[11.5px] leading-normal text-faint">
+          {name} gets a notification and a banner with the deadline, reminded 24 h and 1 h before. Then the files are deleted automatically.
+        </p>
       </div>
 
       {confirm ? (
         <div className="flex flex-col gap-2 rounded-xl border border-dashed border-danger p-3">
           <p className="m-0 text-[13px] text-ink-soft">
-            Delete {confirm === "all" ? `all ${data.files.length} files` : `${picked.size} file${picked.size === 1 ? "" : "s"}`} of {name} now? Their chats show "removed by an administrator".
+            Delete {confirm === "all" ? `all ${data.files.length} files` : `${picked.size} file${picked.size === 1 ? "" : "s"}`} of {name} now? Their chats show
+            "removed by an administrator".
           </p>
           <div className="flex gap-2">
             <SmallButton

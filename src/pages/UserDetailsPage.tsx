@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Notice,
-  Panel,
-  SmallButton,
-  StatusBadge,
-  Table,
-} from "../components/ui";
+import { Notice, Panel, SmallButton, StatusBadge, Table } from "../components/ui";
 import { api } from "../lib/api";
 import { ago, dateTime, EVENT_LABELS, place } from "../lib/format";
 import type { Category, UserContacts, UserDetails } from "../app/types";
@@ -13,31 +7,11 @@ import { ContactsTable, RequestsTable } from "./UserContacts";
 import { ChatDetails, ChatTable } from "./ChatsPage";
 import type { ChatRow } from "../app/types";
 
-const BAD_EVENTS = new Set([
-  "failed_password",
-  "failed_code",
-  "failed_passcode",
-  "failed_secure_code",
-  "locked",
-]);
-const WARN_EVENTS = new Set([
-  "kicked",
-  "passcode_used",
-  "secure_code_used",
-  "admin_reset_used",
-  "email_changed",
-]);
+const BAD_EVENTS = new Set(["failed_password", "failed_code", "failed_passcode", "failed_secure_code", "locked"]);
+const WARN_EVENTS = new Set(["kicked", "passcode_used", "secure_code_used", "admin_reset_used", "email_changed"]);
 type Tab = "account" | "contacts" | "requests" | "chats" | "history";
 
-export function UserDetailsPage({
-  id,
-  categories,
-  onBack,
-}: {
-  id: string;
-  categories: Category[];
-  onBack: () => void;
-}) {
+export function UserDetailsPage({ id, categories, onBack }: { id: string; categories: Category[]; onBack: () => void }) {
   const [data, setData] = useState<UserDetails | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -57,12 +31,14 @@ export function UserDetailsPage({
 
   const load = useCallback(async () => {
     try {
-      const [details, friends] = await Promise.all([
+      const [details, friends, userChats] = await Promise.all([
         api<UserDetails>(`/users/${id}`),
         api<UserContacts>(`/users/${id}/contacts`),
+        api<{ chats: ChatRow[] }>(`/chats?status=all&user=${id}`),
       ]);
       setData(details);
       setContacts(friends);
+      setChats(userChats.chats);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't load this user");
     }
@@ -71,12 +47,7 @@ export function UserDetailsPage({
     void load();
   }, [load]);
 
-  async function act(
-    label: string,
-    path: string,
-    method = "POST",
-    body: unknown = {},
-  ) {
+  async function act(label: string, path: string, method = "POST", body: unknown = {}) {
     setError("");
     setMessage("");
     try {
@@ -84,8 +55,7 @@ export function UserDetailsPage({
         method,
         body,
       });
-      if (path === "/reset-access")
-        setResetCode(res as { code: string; expiresAt: string });
+      if (path === "/reset-access") setResetCode(res as { code: string; expiresAt: string });
       setMessage(label);
       if (method === "DELETE" && path === "") onBack();
       else await load();
@@ -94,35 +64,24 @@ export function UserDetailsPage({
     }
   }
 
-  if (!data)
-    return error ? (
-      <Notice tone="error">{error}</Notice>
-    ) : (
-      <p className="text-dim">Loading…</p>
-    );
+  if (!data) return error ? <Notice tone="error">{error}</Notice> : <p className="text-dim">Loading…</p>;
   const { user, devices, events, currentDeviceId } = data;
   const current = devices.find((d) => d.deviceId === currentDeviceId);
-  const categoryName = (cid: string) =>
-    categories.find((c) => c.id === cid)?.name ?? "?";
+  const categoryName = (cid: string) => categories.find((c) => c.id === cid)?.name ?? "?";
 
   return (
     <>
       <p className="m-0 font-mono text-[11.5px] text-faint">
-        <a href="#/users">users</a> /{" "}
-        <span className="text-dim">{user.username}</span>
+        <a href="#/users">users</a> / <span className="text-dim">{user.username}</span>
       </p>
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-[1_1_240px] flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">
-              {user.username}
-            </h1>
+            <h1 className="m-0 text-[28px] font-extrabold tracking-[-0.02em]">{user.username}</h1>
             <StatusBadge status={user.status} />
             {user.locked ? <StatusBadge status="locked" /> : null}
-            {currentDeviceId ? (
-              <span className="font-mono text-[11px] text-ok">● signed in</span>
-            ) : null}
+            {currentDeviceId ? <span className="font-mono text-[11px] text-ok">● signed in</span> : null}
           </div>
           <p className="m-0 font-mono text-xs text-dim">
             {user.email} · since {dateTime(user.createdAt)}
@@ -132,38 +91,15 @@ export function UserDetailsPage({
         <div className="flex flex-wrap gap-2">
           {user.status === "approved" ? (
             <>
-              <SmallButton
-                onClick={() => act("Signed out everywhere.", "/force-logout")}
-              >
-                Force logout
-              </SmallButton>
-              <SmallButton
-                onClick={() =>
-                  act("One-time reset code created.", "/reset-access")
-                }
-              >
-                Reset access
-              </SmallButton>
-              <SmallButton
-                tone="warn"
-                onClick={() => act("Account suspended.", "/suspend")}
-              >
+              <SmallButton onClick={() => act("Signed out everywhere.", "/force-logout")}>Force logout</SmallButton>
+              <SmallButton onClick={() => act("One-time reset code created.", "/reset-access")}>Reset access</SmallButton>
+              <SmallButton tone="warn" onClick={() => act("Account suspended.", "/suspend")}>
                 Suspend
               </SmallButton>
             </>
           ) : null}
-          {user.status === "suspended" ? (
-            <SmallButton
-              onClick={() => act("Account reactivated.", "/reactivate")}
-            >
-              Reactivate
-            </SmallButton>
-          ) : null}
-          {user.locked ? (
-            <SmallButton onClick={() => act("Sign-in unlocked.", "/unlock")}>
-              Unlock
-            </SmallButton>
-          ) : null}
+          {user.status === "suspended" ? <SmallButton onClick={() => act("Account reactivated.", "/reactivate")}>Reactivate</SmallButton> : null}
+          {user.locked ? <SmallButton onClick={() => act("Sign-in unlocked.", "/unlock")}>Unlock</SmallButton> : null}
           <SmallButton tone="danger" onClick={() => setConfirming(true)}>
             Delete account
           </SmallButton>
@@ -174,19 +110,14 @@ export function UserDetailsPage({
       {error ? <Notice tone="error">{error}</Notice> : null}
       {resetCode ? (
         <Notice tone="warning">
-          Give this one-time code to {user.username} in person:{" "}
-          <strong className="font-mono text-base tracking-[0.15em] text-ink">
-            {resetCode.code}
-          </strong>
-          . It works once, until {dateTime(resetCode.expiresAt)}, on the sign-in
-          screen under “I have a reset code”. It won't be shown again.
+          Give this one-time code to {user.username} in person: <strong className="font-mono text-base tracking-[0.15em] text-ink">{resetCode.code}</strong>. It
+          works once, until {dateTime(resetCode.expiresAt)}, on the sign-in screen under “I have a reset code”. It won't be shown again.
         </Notice>
       ) : null}
       {confirming ? (
         <Panel eyebrow="delete account">
           <p className="m-0 text-sm text-ink-soft">
-            This deletes <strong className="text-ink">{user.username}</strong>{" "}
-            and ends their sessions. Type the username to confirm.
+            This deletes <strong className="text-ink">{user.username}</strong> and ends their sessions. Type the username to confirm.
           </p>
           <div className="flex flex-wrap gap-2">
             <input
@@ -195,27 +126,15 @@ export function UserDetailsPage({
               aria-label="Type the username to confirm"
               className="min-h-[42px] flex-[1_1_200px] rounded-field border border-danger bg-bg px-3 font-mono text-ink outline-none"
             />
-            <SmallButton
-              tone="danger"
-              disabled={confirmText !== user.username}
-              onClick={() =>
-                act("Account deleted.", "", "DELETE", { confirm: confirmText })
-              }
-            >
+            <SmallButton tone="danger" disabled={confirmText !== user.username} onClick={() => act("Account deleted.", "", "DELETE", { confirm: confirmText })}>
               Delete
             </SmallButton>
-            <SmallButton onClick={() => setConfirming(false)}>
-              Cancel
-            </SmallButton>
+            <SmallButton onClick={() => setConfirming(false)}>Cancel</SmallButton>
           </div>
         </Panel>
       ) : null}
 
-      <div
-        role="tablist"
-        aria-label="User sections"
-        className="flex flex-wrap gap-1.5"
-      >
+      <div role="tablist" aria-label="User sections" className="flex flex-wrap gap-1.5">
         {(
           [
             ["account", "Account & devices"],
@@ -248,9 +167,7 @@ export function UserDetailsPage({
           }}
         />
       ) : null}
-      {tab === "requests" && contacts ? (
-        <RequestsTable rows={contacts.requests} />
-      ) : null}
+      {tab === "requests" && contacts ? <RequestsTable rows={contacts.requests} /> : null}
 
       {tab === "account" ? (
         <>
@@ -260,20 +177,11 @@ export function UserDetailsPage({
                 <>
                   <div className="flex flex-col gap-1.5">
                     {categories.map((c) => (
-                      <label
-                        key={c.id}
-                        className="flex items-center gap-2 text-sm"
-                      >
+                      <label key={c.id} className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
                           checked={editing.includes(c.id)}
-                          onChange={() =>
-                            setEditing((e) =>
-                              e!.includes(c.id)
-                                ? e!.filter((x) => x !== c.id)
-                                : [...e!, c.id],
-                            )
-                          }
+                          onChange={() => setEditing((e) => (e!.includes(c.id) ? e!.filter((x) => x !== c.id) : [...e!, c.id]))}
                           className="size-4 accent-brand"
                         />
                         {c.name}
@@ -293,9 +201,7 @@ export function UserDetailsPage({
                     >
                       Save
                     </SmallButton>
-                    <SmallButton onClick={() => setEditing(null)}>
-                      Cancel
-                    </SmallButton>
+                    <SmallButton onClick={() => setEditing(null)}>Cancel</SmallButton>
                   </div>
                 </>
               ) : (
@@ -303,10 +209,7 @@ export function UserDetailsPage({
                   <div className="flex flex-wrap gap-1.5">
                     {user.categoryIds.length ? (
                       user.categoryIds.map((cid) => (
-                        <span
-                          key={cid}
-                          className="rounded-full border border-line-strong bg-raised px-2.5 py-1 text-[12.5px] font-semibold"
-                        >
+                        <span key={cid} className="rounded-full border border-line-strong bg-raised px-2.5 py-1 text-[12.5px] font-semibold">
                           {categoryName(cid)}
                         </span>
                       ))
@@ -328,28 +231,16 @@ export function UserDetailsPage({
             </Panel>
             <Panel eyebrow="secure code">
               <p className="m-0 text-[15px] font-bold">
-                {user.secureCodeDisabled
-                  ? "switched off"
-                  : user.secureCodeSetAt
-                    ? `set ${dateTime(user.secureCodeSetAt)}`
-                    : "not set"}
+                {user.secureCodeDisabled ? "switched off" : user.secureCodeSetAt ? `set ${dateTime(user.secureCodeSetAt)}` : "not set"}
               </p>
-              <p className="m-0 text-[12.5px] leading-snug text-dim">
-                Signs in instead of the emailed code (password still needed).
-                Each use emails the user.
-              </p>
+              <p className="m-0 text-[12.5px] leading-snug text-dim">Signs in instead of the emailed code (password still needed). Each use emails the user.</p>
               {user.status === "approved" ? (
                 <SmallButton
                   tone={user.secureCodeDisabled ? "primary" : "warn"}
                   onClick={() =>
-                    act(
-                      user.secureCodeDisabled
-                        ? "Secure code allowed."
-                        : "Secure code switched off.",
-                      "/secure-code",
-                      "PUT",
-                      { allowed: Boolean(user.secureCodeDisabled) },
-                    )
+                    act(user.secureCodeDisabled ? "Secure code allowed." : "Secure code switched off.", "/secure-code", "PUT", {
+                      allowed: Boolean(user.secureCodeDisabled),
+                    })
                   }
                 >
                   {user.secureCodeDisabled ? "Allow" : "Switch off"}
@@ -357,17 +248,10 @@ export function UserDetailsPage({
               ) : null}
             </Panel>
             <Panel eyebrow="current device">
-              <p className="m-0 text-[15px] font-bold">
-                {current?.name ?? "not signed in"}
-              </p>
+              <p className="m-0 text-[15px] font-bold">{current?.name ?? "not signed in"}</p>
               <p className="m-0 font-mono text-xs text-dim">
                 {current
-                  ? [
-                      current.platform === "android"
-                        ? `Android ${current.osVersion ?? ""}`
-                        : current.os,
-                      current.appVersion && `app ${current.appVersion}`,
-                    ]
+                  ? [current.platform === "android" ? `Android ${current.osVersion ?? ""}` : current.os, current.appVersion && `app ${current.appVersion}`]
                       .filter(Boolean)
                       .join(" · ")
                   : `last seen ${ago(user.lastSeenAt)}`}
@@ -393,17 +277,7 @@ export function UserDetailsPage({
 
           <section className="flex flex-col gap-2.5">
             <h2 className="m-0 text-lg font-extrabold">Devices</h2>
-            <Table
-              head={[
-                "Device",
-                "System",
-                "Screen · language · time zone",
-                "First seen",
-                "Last seen",
-                "Logins",
-              ]}
-              minWidth={860}
-            >
+            <Table head={["Device", "System", "Screen · language · time zone", "First seen", "Last seen", "Logins"]} minWidth={860}>
               {devices.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-dim">
@@ -415,35 +289,16 @@ export function UserDetailsPage({
                 <tr key={d.deviceId}>
                   <td className="font-bold">
                     {d.name ?? "unknown"}
-                    {d.deviceId === currentDeviceId ? (
-                      <span className="font-mono text-[10.5px] text-ok">
-                        {" "}
-                        · current
-                      </span>
-                    ) : null}
+                    {d.deviceId === currentDeviceId ? <span className="font-mono text-[10.5px] text-ok"> · current</span> : null}
                   </td>
                   <td className="text-ink-soft">
-                    {[
-                      d.platform === "android"
-                        ? `Android ${d.osVersion ?? ""}`
-                        : d.os,
-                      d.browser,
-                      d.appVersion && `app ${d.appVersion}`,
-                    ]
+                    {[d.platform === "android" ? `Android ${d.osVersion ?? ""}` : d.os, d.browser, d.appVersion && `app ${d.appVersion}`]
                       .filter(Boolean)
                       .join(" · ")}
                   </td>
-                  <td className="text-ink-soft">
-                    {[d.screen, d.language, d.timezone]
-                      .filter(Boolean)
-                      .join(" · ") || "—"}
-                  </td>
-                  <td className="font-mono text-xs text-dim">
-                    {dateTime(d.firstSeen)}
-                  </td>
-                  <td className="font-mono text-xs text-dim">
-                    {dateTime(d.lastSeen)}
-                  </td>
+                  <td className="text-ink-soft">{[d.screen, d.language, d.timezone].filter(Boolean).join(" · ") || "—"}</td>
+                  <td className="font-mono text-xs text-dim">{dateTime(d.firstSeen)}</td>
+                  <td className="font-mono text-xs text-dim">{dateTime(d.lastSeen)}</td>
                   <td className="font-mono text-xs">{d.logins}</td>
                 </tr>
               ))}
@@ -452,21 +307,68 @@ export function UserDetailsPage({
         </>
       ) : null}
 
+      {tab === "chats" ? (
+        <>
+          <ChatTable
+            rows={chats}
+            selected={openChat}
+            onSelect={(cid) => setOpenChat((c) => (c === cid ? null : cid))}
+            empty={`${user.username} has no chats.`}
+          />
+          {openChat ? (
+            <ChatDetails
+              id={openChat}
+              onDeleted={async () => {
+                setOpenChat(null);
+                setMessage("Chat history deleted.");
+                await load();
+              }}
+            />
+          ) : null}
+          {chats?.some((c) => c.status !== "ended") ? (
+            confirmingHistory ? (
+              <Panel eyebrow="delete all chat history">
+                <p className="m-0 text-sm text-ink-soft">
+                  This ends every open chat of <strong className="text-ink">{user.username}</strong> and deletes the stored messages. Type the username to
+                  confirm.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    value={historyText}
+                    onChange={(e) => setHistoryText(e.target.value)}
+                    aria-label="Type the username to confirm"
+                    className="min-h-[42px] flex-[1_1_200px] rounded-field border border-danger bg-bg px-3 font-mono text-ink outline-none"
+                  />
+                  <SmallButton
+                    tone="danger"
+                    disabled={historyText !== user.username}
+                    onClick={async () => {
+                      await act("All chat history deleted.", "/chats", "DELETE", { confirm: historyText });
+                      setConfirmingHistory(false);
+                      setHistoryText("");
+                    }}
+                  >
+                    Delete all
+                  </SmallButton>
+                  <SmallButton onClick={() => setConfirmingHistory(false)}>Cancel</SmallButton>
+                </div>
+              </Panel>
+            ) : (
+              <SmallButton tone="danger" onClick={() => setConfirmingHistory(true)}>
+                Delete all chat history
+              </SmallButton>
+            )
+          ) : null}
+        </>
+      ) : null}
       {tab === "history" ? (
         <section className="flex flex-col gap-2.5">
-          <h2 className="m-0 text-lg font-extrabold">
-            Login history · 90 days
-          </h2>
-          <Table
-            head={["When", "Event", "IP", "Location", "Device"]}
-            minWidth={720}
-          >
+          <h2 className="m-0 text-lg font-extrabold">Login history · 90 days</h2>
+          <Table head={["When", "Event", "IP", "Location", "Device"]} minWidth={720}>
             {events.map((e) => (
               <tr key={e._id}>
                 <td className="font-mono text-xs text-dim">{dateTime(e.at)}</td>
-                <td
-                  className={`font-bold ${BAD_EVENTS.has(e.type) ? "text-danger-ink" : WARN_EVENTS.has(e.type) ? "text-keep" : "text-ok"}`}
-                >
+                <td className={`font-bold ${BAD_EVENTS.has(e.type) ? "text-danger-ink" : WARN_EVENTS.has(e.type) ? "text-keep" : "text-ok"}`}>
                   {EVENT_LABELS[e.type] ?? e.type}
                 </td>
                 <td className="font-mono text-xs">{e.ip ?? "—"}</td>

@@ -16,7 +16,19 @@ const LINKS: [Section, string][] = [
 const LATER: string[] = [];
 
 /** Sidebar + content; the sidebar stacks above the content on a phone. */
-export function Layout({ current, pending, admin, onSignOut, children }: { current: Section; pending: number; admin: string; onSignOut: () => void; children: ReactNode }) {
+export function Layout({
+  current,
+  pending,
+  admin,
+  onSignOut,
+  children,
+}: {
+  current: Section;
+  pending: number;
+  admin: string;
+  onSignOut: () => void;
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-dvh flex-wrap">
       <nav aria-label="Backoffice" className="flex max-w-full flex-[1_1_220px] flex-col gap-1 border-r border-line bg-[#07080C] px-4 py-6">
