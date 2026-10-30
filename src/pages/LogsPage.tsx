@@ -59,7 +59,12 @@ export function LogsPage() {
   const [error, setError] = useState("");
 
   const query = (before?: string) =>
-    new URLSearchParams({ ...(action ? { action } : {}), ...(admin ? { admin } : {}), ...(q.trim() ? { q: q.trim() } : {}), ...(before ? { before } : {}) }).toString();
+    new URLSearchParams({
+      ...(action ? { action } : {}),
+      ...(admin ? { admin } : {}),
+      ...(q.trim() ? { q: q.trim() } : {}),
+      ...(before ? { before } : {}),
+    }).toString();
   const load = useCallback(
     async (before?: string) => {
       try {
@@ -140,15 +145,19 @@ export function LogsPage() {
             <td className="font-bold">{l.admin ?? "—"}</td>
             <td className="text-ink-soft">
               {ACTIONS[l.action] ?? l.action}{" "}
-              <strong className="text-ink">{l.target ?? (l.details?.username as string | undefined) ?? (l.details?.name as string | undefined) ?? (l.details?.pair as string | undefined) ?? ""}</strong>
+              <strong className="text-ink">
+                {l.target ??
+                  (l.details?.username as string | undefined) ??
+                  (l.details?.name as string | undefined) ??
+                  (l.details?.pair as string | undefined) ??
+                  ""}
+              </strong>
             </td>
             <td className="font-mono text-[11.5px] text-faint">{detailText(l)}</td>
           </tr>
         ))}
       </Table>
-      {more && logs?.length ? (
-        <SmallButton onClick={() => void load(logs[logs.length - 1]!.at)}>Load older</SmallButton>
-      ) : null}
+      {more && logs?.length ? <SmallButton onClick={() => void load(logs[logs.length - 1]!.at)}>Load older</SmallButton> : null}
     </>
   );
 }

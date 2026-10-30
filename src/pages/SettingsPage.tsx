@@ -64,7 +64,9 @@ export function SettingsPage({ onRestored }: { onRestored: () => void }) {
     setError("");
     try {
       const r = await api<{ categories: number; groups: number; skipped: string[] }>("/restore", { body: { confirm, backup: restore!.data } });
-      setNote(`Restored ${r.categories} categories and ${r.groups} new groups${r.skipped.length ? ` · skipped: ${r.skipped.join(", ")} (missing members or category)` : ""}.`);
+      setNote(
+        `Restored ${r.categories} categories and ${r.groups} new groups${r.skipped.length ? ` · skipped: ${r.skipped.join(", ")} (missing members or category)` : ""}.`,
+      );
       setRestore(null);
       onRestored();
     } catch (err) {
@@ -87,13 +89,19 @@ export function SettingsPage({ onRestored }: { onRestored: () => void }) {
           Minimum Android app version
         </h2>
         <p className="m-0 text-[13px] leading-normal text-dim">
-          Phones running an older version see "Update required" and can't use H_CHAT until they install the latest one. Raise it after a security fix. Currently: <strong className="text-ink">{saved || "…"}</strong>
+          Phones running an older version see "Update required" and can't use H_CHAT until they install the latest one. Raise it after a security fix.
+          Currently: <strong className="text-ink">{saved || "…"}</strong>
           {saved === "0.0.0" ? " (no minimum)" : ""}.
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1.5">
             <span className="font-mono text-[10.5px] text-dim">version</span>
-            <input value={min} onChange={(e) => setMin(e.target.value)} placeholder="1.0.0" className="min-h-[42px] w-[140px] rounded-field border border-line-strong bg-sunken px-3 font-mono text-sm text-ink outline-none focus:border-accent" />
+            <input
+              value={min}
+              onChange={(e) => setMin(e.target.value)}
+              placeholder="1.0.0"
+              className="min-h-[42px] w-[140px] rounded-field border border-line-strong bg-sunken px-3 font-mono text-sm text-ink outline-none focus:border-accent"
+            />
           </label>
           <SmallButton tone="primary" disabled={!/^\d+\.\d+\.\d+$/.test(min.trim()) || min.trim() === saved} onClick={() => void saveMin()}>
             Save
@@ -106,7 +114,8 @@ export function SettingsPage({ onRestored }: { onRestored: () => void }) {
           Settings backup
         </h2>
         <p className="m-0 text-[13px] leading-normal text-dim">
-          A file with the categories and their rules, the groups and their members, and these settings. It never contains messages, files or passwords: messages are end-to-end encrypted and can't be read here.
+          A file with the categories and their rules, the groups and their members, and these settings. It never contains messages, files or passwords: messages
+          are end-to-end encrypted and can't be read here.
         </p>
         <div className="flex flex-wrap gap-2">
           <SmallButton tone="primary" onClick={() => void download()}>
@@ -118,12 +127,16 @@ export function SettingsPage({ onRestored }: { onRestored: () => void }) {
         {restore ? (
           <div role="alertdialog" aria-label="Restore" className="flex flex-col gap-2.5 rounded-xl border border-dashed border-keep-line p-3.5">
             <p className="m-0 text-[13px] leading-normal text-ink-soft">
-              Restore <strong className="text-ink">{restore.name}</strong>? Categories are updated with the file's rules (chats that no longer fit end), and groups that don't exist yet are created. Nothing is
-              deleted.
+              Restore <strong className="text-ink">{restore.name}</strong>? Categories are updated with the file's rules (chats that no longer fit end), and
+              groups that don't exist yet are created. Nothing is deleted.
             </p>
             <label className="flex flex-col gap-1.5 text-[12.5px] text-dim">
               Type RESTORE to confirm
-              <input value={confirm} onChange={(e) => setConfirm(e.target.value)} className="min-h-[42px] max-w-[240px] rounded-field border border-keep-line bg-bg px-3 font-mono text-ink outline-none" />
+              <input
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="min-h-[42px] max-w-[240px] rounded-field border border-keep-line bg-bg px-3 font-mono text-ink outline-none"
+              />
             </label>
             <div className="flex gap-2">
               <SmallButton tone="warn" disabled={confirm !== "RESTORE"} onClick={() => void runRestore()}>

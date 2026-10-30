@@ -31,7 +31,17 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (admin: string) => void 
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     void run(async () => {
-      setChallenge(await api<Challenge>("/auth/login", { body: { username: String(form.get("username") ?? "").trim().toLowerCase(), password: form.get("password"), device: deviceInfo() } }));
+      setChallenge(
+        await api<Challenge>("/auth/login", {
+          body: {
+            username: String(form.get("username") ?? "")
+              .trim()
+              .toLowerCase(),
+            password: form.get("password"),
+            device: deviceInfo(),
+          },
+        }),
+      );
     });
   }
 
@@ -77,7 +87,10 @@ export function LoginPage({ onSignedIn }: { onSignedIn: (admin: string) => void 
             </button>
           </form>
         ) : (
-          <form onSubmit={onPassword} className="flex flex-col gap-4 rounded-card border border-line-strong bg-panel px-5 py-[22px] shadow-[8px_8px_0_#ffffff10]">
+          <form
+            onSubmit={onPassword}
+            className="flex flex-col gap-4 rounded-card border border-line-strong bg-panel px-5 py-[22px] shadow-[8px_8px_0_#ffffff10]"
+          >
             <h2 className="m-0 text-2xl font-extrabold tracking-[-0.02em]">Administrator sign in</h2>
             <TextField label="Admin username" name="username" autoComplete="username" autoCapitalize="none" required />
             <TextField label="Password" name="password" type="password" autoComplete="current-password" required />

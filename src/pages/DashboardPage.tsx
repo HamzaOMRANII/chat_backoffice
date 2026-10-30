@@ -27,10 +27,30 @@ export function DashboardPage() {
   const totalUsers = data ? Object.values(data.users).reduce((a, b) => a + b, 0) - data.users.rejected : 0;
   const attention = data
     ? [
-        ...data.attention.pending.map((u) => ({ key: `p${u.id}`, href: `#/users/${u.id}`, tone: "bg-keep", text: `${u.username} is waiting for approval`, when: ago(u.at) })),
-        ...data.attention.locked.map((u) => ({ key: `l${u.id}`, href: `#/users/${u.id}`, tone: "bg-danger", text: `${u.username} is locked after 5 failed attempts`, when: `until ${new Date(u.until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` })),
+        ...data.attention.pending.map((u) => ({
+          key: `p${u.id}`,
+          href: `#/users/${u.id}`,
+          tone: "bg-keep",
+          text: `${u.username} is waiting for approval`,
+          when: ago(u.at),
+        })),
+        ...data.attention.locked.map((u) => ({
+          key: `l${u.id}`,
+          href: `#/users/${u.id}`,
+          tone: "bg-danger",
+          text: `${u.username} is locked after 5 failed attempts`,
+          when: `until ${new Date(u.until).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`,
+        })),
         ...(data.attention.pausedContacts
-          ? [{ key: "paused", href: "#/users", tone: "bg-keep", text: `${data.attention.pausedContacts} paused contact${data.attention.pausedContacts > 1 ? "s" : ""} (no shared category)`, when: "—" }]
+          ? [
+              {
+                key: "paused",
+                href: "#/users",
+                tone: "bg-keep",
+                text: `${data.attention.pausedContacts} paused contact${data.attention.pausedContacts > 1 ? "s" : ""} (no shared category)`,
+                when: "—",
+              },
+            ]
           : []),
       ]
     : [];
@@ -70,7 +90,9 @@ export function DashboardPage() {
         <div className={card}>
           <span className={label}>{"// messages · 24 h"}</span>
           <span className="text-3xl font-extrabold">{data?.messages.last24h ?? "…"}</span>
-          <span className="font-mono text-[11.5px] text-dim">{data ? `${data.messages.stored} stored · ${bytes(data.messages.storedBytes)} encrypted` : ""}</span>
+          <span className="font-mono text-[11.5px] text-dim">
+            {data ? `${data.messages.stored} stored · ${bytes(data.messages.storedBytes)} encrypted` : ""}
+          </span>
         </div>
       </div>
 
@@ -80,7 +102,11 @@ export function DashboardPage() {
           <div className="flex flex-col rounded-2xl border border-line bg-panel">
             {data && attention.length === 0 ? <p className="m-0 px-4 py-3.5 text-sm text-dim">Nothing right now.</p> : null}
             {attention.map((a, i) => (
-              <a key={a.key} href={a.href} className={`flex items-center gap-3 px-4 py-3 text-sm text-ink no-underline hover:bg-raised ${i ? "border-t border-line" : ""}`}>
+              <a
+                key={a.key}
+                href={a.href}
+                className={`flex items-center gap-3 px-4 py-3 text-sm text-ink no-underline hover:bg-raised ${i ? "border-t border-line" : ""}`}
+              >
                 <span className={`size-2 shrink-0 rounded-full ${a.tone}`} aria-hidden="true" />
                 <span className="grow">{a.text}</span>
                 <span className="font-mono text-[11px] text-faint">{a.when}</span>
@@ -93,7 +119,11 @@ export function DashboardPage() {
           <div className="flex flex-col rounded-2xl border border-line bg-panel text-[13.5px]">
             {data?.logins.length === 0 ? <p className="m-0 px-4 py-3.5 text-sm text-dim">None yet.</p> : null}
             {data?.logins.map((l, i) => (
-              <a key={`${l.userId}${l.at}`} href={`#/users/${l.userId}`} className={`flex flex-wrap gap-x-2.5 px-4 py-3 text-ink no-underline hover:bg-raised ${i ? "border-t border-line" : ""}`}>
+              <a
+                key={`${l.userId}${l.at}`}
+                href={`#/users/${l.userId}`}
+                className={`flex flex-wrap gap-x-2.5 px-4 py-3 text-ink no-underline hover:bg-raised ${i ? "border-t border-line" : ""}`}
+              >
                 <span className="grow font-bold">{l.username}</span>
                 <span className="text-dim">{l.deviceName ?? "—"}</span>
                 <span className="font-mono text-[11px] text-faint">{ago(l.at)}</span>

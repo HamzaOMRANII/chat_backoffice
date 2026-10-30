@@ -100,7 +100,16 @@ export type ChatRow = {
   stored: { count: number; bytes: number; nextExpiry: string | null };
 };
 
-export type MessageMeta = { id: string; from: string; to: string; size: number; sentAt: string; deliveredAt: string | null; readAt: string | null; expiresAt: string };
+export type MessageMeta = {
+  id: string;
+  from: string;
+  to: string;
+  size: number;
+  sentAt: string;
+  deliveredAt: string | null;
+  readAt: string | null;
+  expiresAt: string;
+};
 
 export type Dashboard = {
   users: Record<Status, number>;

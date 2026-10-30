@@ -7,7 +7,15 @@ import type { Category, FriendshipRow } from "../app/types";
 const VIA = { id: "ID request", invite: "invite code" };
 
 /** A user's contacts: which shared category's rules apply to each pair, and ending a contact. */
-export function ContactsTable({ rows, categories, onChanged }: { rows: FriendshipRow[]; categories: Category[]; onChanged: (message: string) => Promise<void> }) {
+export function ContactsTable({
+  rows,
+  categories,
+  onChanged,
+}: {
+  rows: FriendshipRow[];
+  categories: Category[];
+  onChanged: (message: string) => Promise<void>;
+}) {
   const [error, setError] = useState("");
   const [ending, setEnding] = useState<string | null>(null);
   const name = (id: string) => categories.find((c) => c.id === id)?.name ?? "?";
@@ -30,7 +38,9 @@ export function ContactsTable({ rows, categories, onChanged }: { rows: Friendshi
       <Table head={["Contact", "Category used", "Since", "Added with", "Last seen", ""]} minWidth={820}>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={6} className="text-dim">No contacts yet.</td>
+            <td colSpan={6} className="text-dim">
+              No contacts yet.
+            </td>
           </tr>
         ) : null}
         {rows.map((r) => (
@@ -50,7 +60,9 @@ export function ContactsTable({ rows, categories, onChanged }: { rows: Friendshi
                   <span className="sr-only">Category for {r.user.username}</span>
                   <select
                     value={r.categoryId ?? ""}
-                    onChange={(e) => run(() => api(`/friendships/${r.id}/category`, { method: "PUT", body: { categoryId: e.target.value } }), "Category changed.")}
+                    onChange={(e) =>
+                      run(() => api(`/friendships/${r.id}/category`, { method: "PUT", body: { categoryId: e.target.value } }), "Category changed.")
+                    }
                     className={`min-h-[38px] rounded-[10px] border bg-bg px-2 text-[13px] text-ink ${r.categoryChosen ? "border-accent" : "border-line-strong"}`}
                   >
                     {ordered(r.sharedCategoryIds).map((c) => (
@@ -61,15 +73,24 @@ export function ContactsTable({ rows, categories, onChanged }: { rows: Friendshi
                   </select>
                 </label>
               )}
-              {r.user.status !== "approved" ? <span className="block font-mono text-[11px] text-keep">{r.user.username} is {r.user.status}</span> : null}
+              {r.user.status !== "approved" ? (
+                <span className="block font-mono text-[11px] text-keep">
+                  {r.user.username} is {r.user.status}
+                </span>
+              ) : null}
             </td>
             <td className="font-mono text-xs text-ink-soft">{dateTime(r.acceptedAt ?? r.createdAt)}</td>
             <td className="text-ink-soft">{VIA[r.via]}</td>
-            <td className={`font-mono text-xs ${r.user.online ? "text-ok" : "text-dim"}`}>{r.user.online ? "online" : r.user.lastSeenAt ? ago(r.user.lastSeenAt) : "—"}</td>
+            <td className={`font-mono text-xs ${r.user.online ? "text-ok" : "text-dim"}`}>
+              {r.user.online ? "online" : r.user.lastSeenAt ? ago(r.user.lastSeenAt) : "—"}
+            </td>
             <td className="whitespace-nowrap text-right">
               {ending === r.id ? (
                 <span className="inline-flex gap-1.5">
-                  <SmallButton tone="danger" onClick={() => run(() => api(`/friendships/${r.id}`, { method: "DELETE" }), `Contact with ${r.user.username} ended.`)}>
+                  <SmallButton
+                    tone="danger"
+                    onClick={() => run(() => api(`/friendships/${r.id}`, { method: "DELETE" }), `Contact with ${r.user.username} ended.`)}
+                  >
                     Confirm end
                   </SmallButton>
                   <SmallButton onClick={() => setEnding(null)}>Cancel</SmallButton>
@@ -85,8 +106,8 @@ export function ContactsTable({ rows, categories, onChanged }: { rows: Friendshi
       </Table>
       {paused.length ? (
         <Notice tone="warning">
-          {paused.map((r) => r.user.username).join(", ")} {paused.length === 1 ? "is" : "are"} paused: hidden from both sides, no new chats. Give the pair a shared
-          category (or reactivate the account) to restore it, or end it.
+          {paused.map((r) => r.user.username).join(", ")} {paused.length === 1 ? "is" : "are"} paused: hidden from both sides, no new chats. Give the pair a
+          shared category (or reactivate the account) to restore it, or end it.
         </Notice>
       ) : null}
       <p className="m-0 text-[12.5px] leading-relaxed text-dim">
@@ -102,7 +123,9 @@ export function RequestsTable({ rows }: { rows: FriendshipRow[] }) {
     <Table head={["With", "Direction", "Sent", "Status"]} minWidth={560}>
       {rows.length === 0 ? (
         <tr>
-          <td colSpan={4} className="text-dim">No open requests.</td>
+          <td colSpan={4} className="text-dim">
+            No open requests.
+          </td>
         </tr>
       ) : null}
       {rows.map((r) => (
