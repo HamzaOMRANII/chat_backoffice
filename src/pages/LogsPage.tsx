@@ -82,7 +82,7 @@ export function LogsPage() {
   }, [load, q]);
 
   // Grouped choices: a whole family ("group.", "user.") or one action
-  const families = [...new Set(actions.map((a) => a.split(".")[0] + "."))];
+  const families = [...new Set(actions.map((a) => `${a.split(".")[0]}.`))];
   const field = "min-h-[42px] rounded-field border border-line-strong bg-panel px-3 text-sm text-ink outline-none focus:border-accent";
   return (
     <>

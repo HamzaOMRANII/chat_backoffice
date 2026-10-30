@@ -57,12 +57,14 @@ export function UserDetailsPage({
 
   const load = useCallback(async () => {
     try {
-      const [details, friends] = await Promise.all([
+      const [details, friends, userChats] = await Promise.all([
         api<UserDetails>(`/users/${id}`),
         api<UserContacts>(`/users/${id}/contacts`),
+        api<{ chats: ChatRow[] }>(`/chats?status=all&user=${id}`),
       ]);
       setData(details);
       setContacts(friends);
+      setChats(userChats.chats);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't load this user");
     }
@@ -452,6 +454,60 @@ export function UserDetailsPage({
         </>
       ) : null}
 
+      {tab === "chats" ? (
+        <>
+          <ChatTable
+            rows={chats}
+            selected={openChat}
+            onSelect={(cid) => setOpenChat((c) => (c === cid ? null : cid))}
+            empty={`${user.username} has no chats.`}
+          />
+          {openChat ? (
+            <ChatDetails
+              id={openChat}
+              onDeleted={async () => {
+                setOpenChat(null);
+                setMessage("Chat history deleted.");
+                await load();
+              }}
+            />
+          ) : null}
+          {chats?.some((c) => c.status !== "ended") ? (
+            confirmingHistory ? (
+              <Panel eyebrow="delete all chat history">
+                <p className="m-0 text-sm text-ink-soft">
+                  This ends every open chat of <strong className="text-ink">{user.username}</strong> and deletes the stored
+                  messages. Type the username to confirm.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    value={historyText}
+                    onChange={(e) => setHistoryText(e.target.value)}
+                    aria-label="Type the username to confirm"
+                    className="min-h-[42px] flex-[1_1_200px] rounded-field border border-danger bg-bg px-3 font-mono text-ink outline-none"
+                  />
+                  <SmallButton
+                    tone="danger"
+                    disabled={historyText !== user.username}
+                    onClick={async () => {
+                      await act("All chat history deleted.", "/chats", "DELETE", { confirm: historyText });
+                      setConfirmingHistory(false);
+                      setHistoryText("");
+                    }}
+                  >
+                    Delete all
+                  </SmallButton>
+                  <SmallButton onClick={() => setConfirmingHistory(false)}>Cancel</SmallButton>
+                </div>
+              </Panel>
+            ) : (
+              <SmallButton tone="danger" onClick={() => setConfirmingHistory(true)}>
+                Delete all chat history
+              </SmallButton>
+            )
+          ) : null}
+        </>
+      ) : null}
       {tab === "history" ? (
         <section className="flex flex-col gap-2.5">
           <h2 className="m-0 text-lg font-extrabold">

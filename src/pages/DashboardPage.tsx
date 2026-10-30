@@ -45,21 +45,21 @@ export function DashboardPage() {
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(190px,100%),1fr))] gap-3">
         <a href="#/users" className={card}>
-          <span className={label}>// users</span>
+          <span className={label}>{"// users"}</span>
           <span className="text-3xl font-extrabold">{data ? totalUsers : "…"}</span>
           <span className="font-mono text-[11.5px] text-dim">
             <span className="text-keep">{data?.users.pending ?? 0} pending</span> · {data?.users.suspended ?? 0} suspended
           </span>
         </a>
         <div className={card}>
-          <span className={label}>// online now</span>
+          <span className={label}>{"// online now"}</span>
           <span className="text-3xl font-extrabold text-ok">{data?.online.total ?? "…"}</span>
           <span className="font-mono text-[11.5px] text-dim">
             {data ? `${data.online.android} Android · ${data.online.total - data.online.android} web` : ""}
           </span>
         </div>
         <a href="#/chats" className={card}>
-          <span className={label}>// active chats</span>
+          <span className={label}>{"// active chats"}</span>
           <span className="text-3xl font-extrabold">{data?.chats.active ?? "…"}</span>
           <span className="flex gap-2 font-mono text-[11px]">
             <span className="text-keep">{data?.chats.keep ?? 0} keep</span>
@@ -68,7 +68,7 @@ export function DashboardPage() {
           </span>
         </a>
         <div className={card}>
-          <span className={label}>// messages · 24 h</span>
+          <span className={label}>{"// messages · 24 h"}</span>
           <span className="text-3xl font-extrabold">{data?.messages.last24h ?? "…"}</span>
           <span className="font-mono text-[11.5px] text-dim">{data ? `${data.messages.stored} stored · ${bytes(data.messages.storedBytes)} encrypted` : ""}</span>
         </div>
